@@ -1,0 +1,27 @@
+{
+  "name": "@veridom/milestones-contract",
+  "version": "0.3.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./managed/*": "./src/managed/veridom-milestones/*"
+  },
+  "scripts": {
+    "compile": "node scripts/compile.mjs",
+    "compile:fast": "node scripts/compile.mjs --skip-zk",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "5.0.4"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "veridom-milestones",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Private milestone proofs for construction-loan draws, on Midnight. A Veridom module.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "contract",
+    "ui"
+  ],
+  "scripts": {
+    "compile": "npm run compile -w contract",
+    "compile:fast": "npm run compile:fast -w contract",
+    "test": "npm test -w contract",
+    "typecheck": "npm run typecheck -w contract && npm run typecheck -w ui",
+    "dev": "npm run dev -w ui",
+    "build": "npm run build -w ui"
+  },
+  "overrides": {
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
+    "@midnight-ntwrk/onchain-runtime-v3": "3.1.1"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.10.0",
+      "onFail": "warn"
+    }
+  },
+  "allowScripts": {
+    "msgpackr-extract": false,
+    "esbuild": false,
+    "@swc/core": false
+  }
+}

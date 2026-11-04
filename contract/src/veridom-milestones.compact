@@ -1,0 +1,446 @@
+// Copyright (C) 2026 Veridom (Khrystyna Didukh)
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Veridom Milestones: private milestone proofs for construction-loan draws.
+//
+// A bank pays a construction loan out in tranches, one per completed stage of
+// the build (foundation, shell, roof, ...). This contract lets the builder prove
+// to the bank, on a public ledger, that
+//   * stage k is complete: an authorised inspector signed the evidence bundle
+//     for exactly this project, this stage and this contract, and
+//   * the cumulative draw stays within the approved loan limit and the stage cap,
+// without publishing the evidence, the amounts, the contractors or who the
+// builder is. The builder can later open one chosen fact to one auditor.
+//
+// What is public (ledger)                 | What stays private (witnesses)
+// ----------------------------------------+------------------------------------------
+// lender key hash, inspector public keys  | lender and builder secrets
+// project id, builder key hash            | loan limit and per-stage caps
+// commitment to the loan terms            | opening (salt) of every commitment
+// commitment to the running total drawn   | cumulative amount drawn
+// per stage: status, inspector id,        | evidence-bundle hash (photos, invoices,
+//   evidence commitment, tranche          |   contractors), inspector signature,
+//   commitment                            |   tranche amount
+// spent-attestation nullifiers            |
+// salted disclosure receipts              | which auditor received which value
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+import "schnorr" prefix Schnorr_;
+
+export { Schnorr_SchnorrSignature };
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+// Serialised as their index: Pending=0, Attested=1, TrancheRequested=2,
+// TrancheReleased=3.
+export enum StageStatus { Pending, Attested, TrancheRequested, TrancheReleased }
+
+// The facts a builder can open to an auditor, one at a time.
+export enum FactKind { TrancheAmount, EvidenceBundle, TotalDrawn }
+
+// The loan terms the bank approved. Never written to the ledger: only
+// `termsCommitment(terms, salt)` is. A draw schedule has at most six stages.
+export struct LoanTerms {
+  limit: Uint<64>;                    // approved loan limit, in euro cents
+  stageCaps: Vector<6, Uint<64>>;     // maximum draw per stage, in euro cents
+}
+
+export struct Project {
+  builder: Bytes<32>;           // builderKey(secret): pseudonymous, reveals no identity
+  termsCommitment: Bytes<32>;   // hiding commitment to LoanTerms
+  drawnCommitment: Bytes<32>;   // hiding commitment to the cumulative amount drawn
+  stageCount: Uint<8>;          // number of stages in the plan (1..6)
+  accepted: Boolean;            // the builder proved they hold the approved terms
+  stagesAttested: Uint<8>;      // stages 0..stagesAttested-1 are attested
+  tranchesReleased: Uint<8>;
+}
+
+export struct StageRecord {
+  status: StageStatus;
+  inspectorId: Uint<16>;
+  evidenceCommitment: Bytes<32>;   // commitment to the SHA-256 of the evidence bundle
+  trancheCommitment: Bytes<32>;    // commitment to the tranche amount
+}
+
+// What the builder holds for one milestone. Comes from a witness, so every
+// field is untrusted until the circuit has checked it.
+export struct MilestoneEvidence {
+  evidenceHash: Bytes<32>;
+  evidenceSalt: Bytes<32>;
+  inspectorId: Uint<16>;
+  signature: Schnorr_SchnorrSignature;
+}
+
+// Preimage of a disclosure receipt. Committed with a random nonce, so the
+// ledger shows that a disclosure happened, not to whom or of what value.
+export struct DisclosureReceipt {
+  projectId: Bytes<32>;
+  stage: Uint<8>;
+  kind: FactKind;
+  auditor: Bytes<32>;
+  factCommitment: Bytes<32>;
+}
+
+// ---------------------------------------------------------------------------
+// Public ledger
+// ---------------------------------------------------------------------------
+
+export ledger lender: Bytes<32>;                                // lenderKey(secret) of the deployer
+export ledger inspectors: Map<Uint<16>, JubjubPoint>;           // authorised inspectors
+export ledger projects: Map<Bytes<32>, Project>;
+export ledger stages: Map<Bytes<32>, Map<Uint<8>, StageRecord>>;
+export ledger usedAttestations: Set<Bytes<32>>;                 // spent signature nullifiers
+export ledger disclosureReceipts: Set<Bytes<32>>;
+export ledger attestationCount: Counter;
+export ledger disclosureCount: Counter;
+
+// ---------------------------------------------------------------------------
+// Witnesses: private state that never leaves the caller's machine
+// ---------------------------------------------------------------------------
+
+witness localSecret(): Bytes<32>;
+witness loanTerms(projectId: Bytes<32>): [LoanTerms, Bytes<32>];
+witness drawnTotal(projectId: Bytes<32>): [Uint<64>, Bytes<32>];
+witness milestoneEvidence(projectId: Bytes<32>, stage: Uint<8>): MilestoneEvidence;
+witness trancheAmount(projectId: Bytes<32>, stage: Uint<8>): Uint<64>;
+witness trancheOpening(projectId: Bytes<32>, stage: Uint<8>): [Uint<64>, Bytes<32>];
+// Write-back witnesses: they draw fresh salts AND record the new private values
+// in the caller's private state, which midnight-js persists once the
+// transaction succeeds.
+witness storeAcceptance(projectId: Bytes<32>): Bytes<32>;
+witness storeDraw(projectId: Bytes<32>, stage: Uint<8>, amount: Uint<64>, newTotal: Uint<64>): [Bytes<32>, Bytes<32>];
+
+// ---------------------------------------------------------------------------
+// Pure circuits: also generated as TypeScript (`pureCircuits.*`) so the bank,
+// the inspector and the auditor compute exactly what the contract computes.
+// ---------------------------------------------------------------------------
+
+export pure circuit lenderKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "veridom:lender:v1"), sk]);
+}
+
+export pure circuit builderKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "veridom:builder:v1"), sk]);
+}
+
+export pure circuit termsCommitment(terms: LoanTerms, salt: Bytes<32>): Bytes<32> {
+  return persistentCommit<LoanTerms>(terms, salt);
+}
+
+export pure circuit amountCommitment(amount: Uint<64>, salt: Bytes<32>): Bytes<32> {
+  return persistentCommit<Uint<64>>(amount, salt);
+}
+
+export pure circuit evidenceCommitment(evidenceHash: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+  return persistentCommit<Bytes<32>>(evidenceHash, salt);
+}
+
+export pure circuit receiptCommitment(receipt: DisclosureReceipt, nonce: Bytes<32>): Bytes<32> {
+  return persistentCommit<DisclosureReceipt>(receipt, nonce);
+}
+
+// The message an inspector signs. It binds the contract instance, the project,
+// the stage and the evidence bundle, so one signature cannot be used for any
+// other contract, project, stage or bundle.
+export pure circuit milestoneMessage(contractAddress: Bytes<32>,
+                                     projectId: Bytes<32>,
+                                     stage: Uint<8>,
+                                     evidenceHash: Bytes<32>): Vector<5, Field> {
+  return [degradeToTransient(pad(32, "veridom:milestone:v1")),
+          degradeToTransient(contractAddress),
+          degradeToTransient(projectId),
+          stage as Field,
+          degradeToTransient(evidenceHash)];
+}
+
+export pure circuit schnorrChallenge(ann_x: Field, ann_y: Field, pk_x: Field, pk_y: Field,
+                                     msg: Vector<5, Field>): Field {
+  return Schnorr_schnorrChallenge(ann_x, ann_y, pk_x, pk_y, msg);
+}
+
+// Select caps[stage] for a stage known only at proving time. Vector indices must
+// be compile-time constants, so fold over the caps together with their indices.
+pure circuit capForStage(caps: Vector<6, Uint<64>>, stage: Uint<8>): Uint<64> {
+  const indices: Vector<6, Uint<8>> = [0, 1, 2, 3, 4, 5];
+  return fold((acc: Uint<64>, cap: Uint<64>, i: Uint<8>): Uint<64> => i == stage ? cap : acc,
+              0 as Uint<64>, caps, indices);
+}
+
+// ---------------------------------------------------------------------------
+// Internal checks
+// ---------------------------------------------------------------------------
+
+// Caller identity comes from a witness secret, never from the wallet that pays
+// the fee. Only someone who knows the secret behind `lender` passes.
+circuit assertLender(): [] {
+  assert(lender == lenderKey(localSecret()), "Only the lender can do this");
+}
+
+circuit loadProject(projectId: Bytes<32>): Project {
+  assert(projects.member(projectId), "Unknown project");
+  return projects.lookup(projectId);
+}
+
+circuit assertBuilder(p: Project): [] {
+  assert(p.builder == builderKey(localSecret()), "Only the builder of this project can do this");
+}
+
+// The caller proves they hold the loan terms behind the on-chain commitment.
+circuit openTerms(projectId: Bytes<32>, p: Project): LoanTerms {
+  const [terms, salt] = loanTerms(projectId);
+  assert(termsCommitment(terms, salt) == p.termsCommitment,
+         "Loan terms do not match the approved commitment");
+  return terms;
+}
+
+// The caller proves they know the running total behind the on-chain commitment.
+circuit openDrawn(projectId: Bytes<32>, p: Project): Uint<64> {
+  const [total, salt] = drawnTotal(projectId);
+  assert(amountCommitment(total, salt) == p.drawnCommitment,
+         "Drawn total does not match the on-chain commitment");
+  return total;
+}
+
+// ---------------------------------------------------------------------------
+// Bank (lender)
+// ---------------------------------------------------------------------------
+
+// The deployer is the lender. Only the hash of their secret goes on chain.
+constructor() {
+  lender = disclose(lenderKey(localSecret()));
+}
+
+export circuit registerInspector(inspectorId: Uint<16>, inspectorPk: JubjubPoint): [] {
+  assertLender();
+  inspectors.insert(disclose(inspectorId), disclose(inspectorPk));
+}
+
+export circuit revokeInspector(inspectorId: Uint<16>): [] {
+  assertLender();
+  assert(inspectors.member(disclose(inspectorId)), "Inspector not found");
+  inspectors.remove(disclose(inspectorId));
+}
+
+// The bank opens a project for an approved loan. It publishes only a
+// commitment to the terms; the builder receives the terms and the salt with the
+// loan agreement, off chain.
+export circuit registerProject(projectId: Bytes<32>,
+                               builder: Bytes<32>,
+                               terms: Bytes<32>,
+                               stageCount: Uint<8>): [] {
+  assertLender();
+  const pid = disclose(projectId);
+  const count = disclose(stageCount);
+  assert(!projects.member(pid), "Project already registered");
+  assert(count > 0 && count <= 6, "A plan has between 1 and 6 stages");
+  projects.insert(pid, Project {
+    builder: disclose(builder),
+    termsCommitment: disclose(terms),
+    drawnCommitment: default<Bytes<32>>,
+    stageCount: count,
+    accepted: false,
+    stagesAttested: 0,
+    tranchesReleased: 0
+  });
+  stages.insert(pid, default<Map<Uint<8>, StageRecord>>);
+}
+
+// The bank marks a requested tranche as paid out. The amount itself reaches the
+// bank off chain as an opening it can check with `amountCommitment`.
+export circuit releaseTranche(projectId: Bytes<32>, stage: Uint<8>): [] {
+  assertLender();
+  const pid = disclose(projectId);
+  const st = disclose(stage);
+  const p = loadProject(pid);
+  assert(stages.lookup(pid).member(st), "Stage not attested");
+  const rec = stages.lookup(pid).lookup(st);
+  assert(rec.status == StageStatus.TrancheRequested, "No open tranche request for this stage");
+  stages.lookup(pid).insert(st, StageRecord {
+    status: StageStatus.TrancheReleased,
+    inspectorId: rec.inspectorId,
+    evidenceCommitment: rec.evidenceCommitment,
+    trancheCommitment: rec.trancheCommitment
+  });
+  projects.insert(pid, Project {
+    builder: p.builder,
+    termsCommitment: p.termsCommitment,
+    drawnCommitment: p.drawnCommitment,
+    stageCount: p.stageCount,
+    accepted: p.accepted,
+    stagesAttested: p.stagesAttested,
+    tranchesReleased: (p.tranchesReleased + 1) as Uint<8>
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Builder
+// ---------------------------------------------------------------------------
+
+// The builder proves, without revealing them, that they hold exactly the terms
+// the bank committed to, and opens a private running total at zero.
+export circuit acceptProject(projectId: Bytes<32>): [] {
+  const pid = disclose(projectId);
+  const p = loadProject(pid);
+  assertBuilder(p);
+  assert(!p.accepted, "Project already accepted");
+  const terms = openTerms(pid, p);
+  assert(terms.limit > 0, "Loan limit must be positive");
+  const salt = storeAcceptance(pid);
+  projects.insert(pid, Project {
+    builder: p.builder,
+    termsCommitment: p.termsCommitment,
+    drawnCommitment: amountCommitment(0, salt),
+    stageCount: p.stageCount,
+    accepted: true,
+    stagesAttested: p.stagesAttested,
+    tranchesReleased: p.tranchesReleased
+  });
+}
+
+// Public outcome: "stage k of project P is complete, signed by inspector i".
+// Private inputs: the evidence-bundle hash, its salt and the inspector's signature.
+export circuit attestMilestone(projectId: Bytes<32>, stage: Uint<8>): [] {
+  const pid = disclose(projectId);
+  const st = disclose(stage);
+  const p = loadProject(pid);
+  assertBuilder(p);
+  assert(p.accepted, "The builder has not accepted this project yet");
+
+  const ev = milestoneEvidence(pid, st);
+  const inspectorId = disclose(ev.inspectorId);
+  assert(inspectors.member(inspectorId), "Inspector is not authorised");
+  const msg = milestoneMessage(kernel.self().bytes, pid, st, ev.evidenceHash);
+  Schnorr_schnorrVerify<5>(msg, ev.signature, inspectors.lookup(inspectorId));
+
+  // A signature can be spent once. The nullifier is a hash of the signature,
+  // which reveals nothing about the evidence it signs.
+  const nullifier = disclose(persistentHash<Vector<3, Field>>([
+    jubjubPointX(ev.signature.announcement),
+    jubjubPointY(ev.signature.announcement),
+    ev.signature.response
+  ]));
+  assert(!usedAttestations.member(nullifier), "Attestation already used");
+
+  assert(st < p.stageCount, "Stage is not in the plan");
+  assert(st == p.stagesAttested, "Stages must be attested in order");
+
+  usedAttestations.insert(nullifier);
+  stages.lookup(pid).insert(st, StageRecord {
+    status: StageStatus.Attested,
+    inspectorId: inspectorId,
+    evidenceCommitment: evidenceCommitment(ev.evidenceHash, ev.evidenceSalt),
+    trancheCommitment: default<Bytes<32>>
+  });
+  projects.insert(pid, Project {
+    builder: p.builder,
+    termsCommitment: p.termsCommitment,
+    drawnCommitment: p.drawnCommitment,
+    stageCount: p.stageCount,
+    accepted: p.accepted,
+    stagesAttested: (p.stagesAttested + 1) as Uint<8>,
+    tranchesReleased: p.tranchesReleased
+  });
+  attestationCount.increment(1);
+}
+
+// Public outcome: "a tranche for stage k is requested and the loan stays within
+// its limit". Private inputs: the terms, the running total and the amount.
+export circuit requestTranche(projectId: Bytes<32>, stage: Uint<8>): [] {
+  const pid = disclose(projectId);
+  const st = disclose(stage);
+  const p = loadProject(pid);
+  assertBuilder(p);
+  assert(stages.lookup(pid).member(st), "Stage not attested");
+  const rec = stages.lookup(pid).lookup(st);
+  assert(rec.status == StageStatus.Attested, "A tranche was already requested for this stage");
+
+  const terms = openTerms(pid, p);
+  const drawn = openDrawn(pid, p);
+  const amount = trancheAmount(pid, st);
+  assert(amount > 0, "Tranche amount must be positive");
+  assert(amount <= capForStage(terms.stageCaps, st), "Tranche exceeds the cap for this stage");
+  const newTotal = drawn + amount;
+  assert(newTotal <= terms.limit, "Cumulative draw would exceed the approved loan limit");
+  const total = newTotal as Uint<64>;
+
+  const [trancheSalt, drawnSalt] = storeDraw(pid, st, amount, total);
+  stages.lookup(pid).insert(st, StageRecord {
+    status: StageStatus.TrancheRequested,
+    inspectorId: rec.inspectorId,
+    evidenceCommitment: rec.evidenceCommitment,
+    trancheCommitment: amountCommitment(amount, trancheSalt)
+  });
+  projects.insert(pid, Project {
+    builder: p.builder,
+    termsCommitment: p.termsCommitment,
+    drawnCommitment: amountCommitment(total, drawnSalt),
+    stageCount: p.stageCount,
+    accepted: p.accepted,
+    stagesAttested: p.stagesAttested,
+    tranchesReleased: p.tranchesReleased
+  });
+}
+
+// Selective disclosure. Only the builder can consent. The circuit proves that
+// the builder holds the opening of the chosen on-chain commitment, then records
+// a salted receipt. The value itself goes to the auditor off chain, as a packet
+// the auditor checks against the ledger with the pure circuits above.
+export circuit discloseToAuditor(projectId: Bytes<32>,
+                                 stage: Uint<8>,
+                                 kind: FactKind,
+                                 auditor: Bytes<32>,
+                                 nonce: Bytes<32>): [] {
+  const pid = disclose(projectId);
+  const st = disclose(stage);
+  const k = disclose(kind);
+  const p = loadProject(pid);
+  assertBuilder(p);
+
+  const fact = factCommitment(pid, st, k, p);
+  disclosureReceipts.insert(receiptCommitment(DisclosureReceipt {
+    projectId: pid,
+    stage: st,
+    kind: k,
+    auditor: auditor,
+    factCommitment: fact
+  }, nonce));
+  disclosureCount.increment(1);
+}
+
+circuit factCommitment(pid: Bytes<32>, st: Uint<8>, k: FactKind, p: Project): Bytes<32> {
+  if (k == FactKind.TotalDrawn) {
+    openDrawn(pid, p);
+    return p.drawnCommitment;
+  } else {
+    assert(stages.lookup(pid).member(st), "Stage has no record yet");
+    const rec = stages.lookup(pid).lookup(st);
+    if (k == FactKind.EvidenceBundle) {
+      const ev = milestoneEvidence(pid, st);
+      assert(evidenceCommitment(ev.evidenceHash, ev.evidenceSalt) == rec.evidenceCommitment,
+             "Evidence opening does not match the on-chain commitment");
+      return rec.evidenceCommitment;
+    } else {
+      assert(rec.status != StageStatus.Attested, "No tranche requested for this stage");
+      const [amount, salt] = trancheOpening(pid, st);
+      assert(amountCommitment(amount, salt) == rec.trancheCommitment,
+             "Tranche opening does not match the on-chain commitment");
+      return rec.trancheCommitment;
+    }
+  }
+}

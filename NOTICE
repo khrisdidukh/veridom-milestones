@@ -1,0 +1,24 @@
+Veridom Milestones
+Copyright 2026 Veridom (Khrystyna Didukh)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes software developed by the Midnight Foundation:
+
+  contract/src/schnorr.compact
+    Schnorr signature verification on the Jubjub curve, adapted from
+    midnightntwrk/midnight-examples, examples/zk-loan/contract/schnorr.compact
+    Copyright (C) Midnight Foundation. Licensed under the Apache License 2.0.
+    Modified: the exported challenge helper takes a 5-field message.
+
+  contract/src/inspector.ts (signing scheme)
+    The Schnorr signer follows midnightntwrk/midnight-examples,
+    examples/zk-loan/attestation-api/signing.ts
+    Copyright (C) Midnight Foundation. Licensed under the Apache License 2.0.
+
+  ui/src/midnight/lace.ts (wallet provider wiring)
+    The Lace / DApp Connector provider set-up follows midnightntwrk/midnight-examples,
+    examples/zk-loan/ui/src/contexts/ZKLoanContext.tsx
+    Copyright (C) Midnight Foundation. Licensed under the Apache License 2.0.
+
+Built with the Midnight Compact toolchain and Midnight.js (https://midnight.network).

@@ -1,0 +1,99 @@
+// Copyright (C) Midnight Foundation
+// Modifications Copyright (C) 2026 Veridom (Khrystyna Didukh)
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Schnorr signature verification on the Jubjub curve, inside a circuit.
+//
+// Source: midnightntwrk/midnight-examples, examples/zk-loan/contract/schnorr.compact
+// (Apache-2.0). Compact toolchain 0.31.1 has no `jubjubSchnorrVerify` in the
+// standard library yet (it arrives with the ledger-9 toolchains), so this module
+// is the documented polyfill.
+//
+// Changes from upstream (Apache-2.0 section 4(b)):
+//   * the exported pure challenge helper is fixed to a 5-field message, the
+//     shape of a Veridom milestone attestation;
+//   * comments rewritten for this project.
+//
+// Scheme (G = Jubjub generator, pk = sk*G):
+//   sign:   R = k*G, c = H(R, pk, msg) mod 2^248, s = k + c*sk (mod Jubjub order)
+//   verify: s*G == R + c*pk
+
+module schnorr {
+  import CompactStandardLibrary;
+
+  export struct SchnorrSignature {
+    announcement: JubjubPoint;  // R
+    response: Field;            // s
+  }
+
+  // The challenge commits to the announcement and the public key as well as the
+  // message, which rules out key-substitution attacks.
+  struct SchnorrHashInput<#n> {
+    ann_x: Field;
+    ann_y: Field;
+    pk_x: Field;
+    pk_y: Field;
+    msg: Vector<n, Field>;
+  }
+
+  // Off-chain division of the challenge hash by 2^248. The circuit only checks
+  // the answer. The quotient is a Uint<7> and is range-checked below, so the
+  // reduction holds over the integers and cannot be solved for a forged challenge.
+  witness getSchnorrReduction(challengeHash: Field): [Uint<7>, Uint<248>];
+
+  export circuit schnorrVerify<#n>(
+                   msg: Vector<n, Field>,
+                   signature: SchnorrSignature,
+                   pk: JubjubPoint
+                   ): [] {
+    const {announcement, response} = signature;
+    const cFull: Field =
+            transientHash<SchnorrHashInput<n>>(
+              SchnorrHashInput<n> { ann_x: jubjubPointX(announcement),
+                                    ann_y: jubjubPointY(announcement),
+                                    pk_x: jubjubPointX(pk),
+                                    pk_y: jubjubPointY(pk),
+                                    msg: msg }
+              );
+    const TWO_248: Field =
+            452312848583266388373324160190187140051835877600158453279131187530910662656 as Field;
+    const [q, cTruncated] = getSchnorrReduction(cFull);
+    // floor((BLS12-381 scalar prime - 1) / 2^248) == 115
+    assert(disclose(q) < 116, "Schnorr quotient out of range");
+    assert(disclose(q) * TWO_248 + (disclose(cTruncated) as Field) == cFull,
+           "Invalid challenge reduction");
+    const c: Field = disclose(cTruncated) as Field;
+    // s*G == R + c*pk, compared coordinate-wise (JubjubPoint `==` is reference
+    // equality in the generated JavaScript).
+    const lhs: JubjubPoint = ecMulGenerator(response);
+    const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
+    assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
+           "Invalid inspector signature");
+  }
+
+  // Exposes the exact challenge hash to TypeScript, so the off-chain inspector
+  // signer computes what the circuit computes. Callers reduce it mod 2^248.
+  export pure circuit schnorrChallenge(
+                        ann_x: Field,
+                        ann_y: Field,
+                        pk_x: Field,
+                        pk_y: Field,
+                        msg: Vector<5, Field>
+                        ): Field {
+    return transientHash<SchnorrHashInput<5>>(
+             SchnorrHashInput<5> { ann_x: ann_x, ann_y: ann_y, pk_x: pk_x, pk_y: pk_y, msg: msg }
+           );
+  }
+}
