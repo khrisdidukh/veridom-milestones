@@ -10,3 +10,4 @@ coverage/
 # Verifier keys, ZKIR and the generated JS/TS bindings are committed as build evidence.
 contract/src/managed/**/keys/*.prover
 ui/public/managed/
+ui/e2e/screenshots/

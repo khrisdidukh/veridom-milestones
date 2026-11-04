@@ -107,6 +107,16 @@ export class MilestonesSimulator {
     return this.contract.impureCircuits;
   }
 
+  /** Calls any impure circuit by name, as the given party. Used by the frontend. */
+  callCircuit(party: string, circuit: keyof Contract<VeridomPrivateState>['impureCircuits'], args: unknown[]): void {
+    this.run(party, circuit, (ctx) =>
+      (this.c[circuit] as (ctx: CircuitContext<VeridomPrivateState>, ...a: unknown[]) => CircuitResults<VeridomPrivateState, []>)(
+        ctx,
+        ...args,
+      ),
+    );
+  }
+
   registerInspector(party: string, inspectorId: bigint, pk: JubjubPoint): void {
     this.run(party, 'registerInspector', (ctx) => this.c.registerInspector(ctx, inspectorId, pk));
   }

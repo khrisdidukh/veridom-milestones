@@ -123,7 +123,7 @@ export const verifyDisclosurePacket = (
       computed = pureCircuits.amountCommitment(BigInt(packet.value), salt);
     } else {
       const stages = ledger.stages.lookup(projectId);
-      if (!add(`Stage ${stage} has an on-chain record`, stages.member(stage))) return done();
+      if (!add('The stage has an on-chain record', stages.member(stage))) return done();
       const rec = stages.lookup(stage);
       if (packet.fact === 'EvidenceBundle') {
         onChain = rec.evidenceCommitment;

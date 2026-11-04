@@ -1,0 +1,19 @@
+# Veridom Milestones: end-to-end run on a local Midnight devnet
+# node 1.0.400, indexer-standalone 4.3.5, proof-server 8.1.3, midnight-js 4.1.1
+# Lines with a tx id are real transactions with ZK proofs, accepted by the node.
+# 'rejected locally' lines are circuit asserts that failed on the prover's machine:
+# no proof can be produced for them, so nothing reaches the chain.
+2026-11-04T12:04:15.182Z  network undeployed, proof server http://127.0.0.1:6300
+2026-11-04T12:04:38.772Z  deploy             as bank    contract fb5c52b09248de0a1967bc8a2c876cc2540956088a3c77f4a795ea608f4506b0  23.6 s
+2026-11-04T12:05:02.636Z  registerInspector  as bank    tx 001d4c8fb70110ae338dd71351958f0d65d134436d27e2582325ade3786b813333  block 35  23.7 s
+2026-11-04T12:05:26.660Z  registerProject    as bank    tx 00b48f95a0a5e9fcfb7cc8b5ef34cf7605db7450c4547dfa784917e681cf0ef30c  block 39  24.0 s
+2026-11-04T12:05:50.711Z  acceptProject      as builder tx 00147c30b2074b425f405bb673c0f6d4c2b0c3102a998c63e9c54f1e96481dd935  block 43  24.1 s
+2026-11-04T12:06:20.083Z  attestMilestone    as builder tx 007a6bfe41601a0f1cacef4ebabb28d1c4fc15f875afc5976e666e41ed1b971249  block 48  29.0 s
+2026-11-04T12:06:50.819Z  requestTranche     as builder tx 00900a4074c61d4b326875b21d86f23f65cc2078201bf0268ea6354cdf31d848c1  block 53  30.7 s
+2026-11-04T12:07:15.012Z  releaseTranche     as bank    tx 00654fe7b1d635f9e6665ca0325ac90b96c0b07bcf48ead246c241a13657a1ef54  block 57  24.2 s
+2026-11-04T12:07:15.213Z  attestMilestone    replay rejected locally: Attestation already used
+2026-11-04T12:07:38.818Z  attestMilestone    as builder tx 003e5857eece558f0afcb33be75c85746150afd1a8a3f86a95df767b501fb1f86c  block 61  23.4 s
+2026-11-04T12:07:38.960Z  requestTranche     over-limit rejected locally: Cumulative draw would exceed the approved loan limit
+2026-11-04T12:08:03.111Z  requestTranche     as builder tx 005e7d79298f147a35aad4e4685efd7e3424f1362fd0e5b54560a1f960562e4d80  block 65  23.9 s
+2026-11-04T12:08:32.254Z  discloseToAuditor  as builder tx 00ba05ae201e8b8cd17275ae2f0c27c3ffe487a0b6cea129d3e79068cd4ccd6a5e  block 70  29.1 s
+2026-11-04T12:08:32.371Z  auditor verified   7 checks passed against indexer state
