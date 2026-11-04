@@ -11,3 +11,5 @@ coverage/
 contract/src/managed/**/keys/*.prover
 ui/public/managed/
 ui/e2e/screenshots/
+# Private-state store written by the e2e run (midnight-js level provider)
+midnight-level-db/

@@ -1,0 +1,318 @@
+<!doctype html>
+<!-- Copyright (C) 2026 Veridom (Khrystyna Didukh). SPDX-License-Identifier: Apache-2.0
+     Pitch deck. Open in a browser (arrow keys scroll slide by slide) or render the PDF:
+     node docs/slides/render-pdf.mjs -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Veridom Milestones</title>
+<style>
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 400; src: url(fonts/ibm-plex-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 500; src: url(fonts/ibm-plex-sans-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 600; src: url(fonts/ibm-plex-sans-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format('woff2'); }
+
+:root {
+  --paper: #f1f3f2; --sheet: #fbfcfc; --ink: #16324b; --ink-soft: #2f4a62; --graphite: #5e6b73;
+  --hairline: #c9d1d4; --grid: #e3e8ea; --proven: #e3b23c; --ok: #2e6a4e; --bad: #a3382a;
+  --tone: rgba(22, 50, 75, 0.13);
+}
+@page { size: 1600px 900px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #d9dfe1; }
+body { font: 400 26px/1.45 'IBM Plex Sans', sans-serif; color: var(--ink); }
+.slide {
+  width: 1600px; height: 900px; margin: 24px auto; position: relative; overflow: hidden;
+  background-color: var(--sheet);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  padding: 88px 104px 96px;
+  page-break-after: always; break-after: page;
+}
+@media print { html, body { background: none; } .slide { margin: 0; } }
+.slide::after {
+  /* Title block in the corner, as on a drawing sheet. */
+  content: attr(data-sheet);
+  position: absolute; right: 48px; bottom: 36px;
+  font: 400 15px/1 'IBM Plex Sans'; color: var(--graphite);
+  border: 1px solid var(--hairline); background: var(--sheet); padding: 10px 14px;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; line-height: 1.12; letter-spacing: -0.01em; }
+h1 { font-size: 92px; }
+h2 { font-size: 58px; max-width: 22ch; margin-bottom: 44px; }
+h3 { font-size: 30px; margin-bottom: 10px; }
+p { margin: 0 0 18px; max-width: 46ch; }
+code, .mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.82em; }
+.muted { color: var(--graphite); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: start; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
+ul.plain { list-style: none; padding: 0; margin: 0; }
+ul.plain li { padding: 14px 0; border-top: 1px solid var(--hairline); }
+ul.plain li:last-child { border-bottom: 1px solid var(--hairline); }
+
+/* Slide 1 */
+.title { display: grid; grid-template-columns: 1fr 640px; gap: 40px; align-items: center; padding-top: 120px; }
+.title .sub { font-size: 34px; color: var(--ink-soft); max-width: 24ch; margin-top: 28px; }
+.title .meta { margin-top: 64px; font-size: 22px; color: var(--graphite); }
+.house rect, .house line, .house polygon { fill: none; stroke: var(--ink); stroke-width: 3; }
+.house .planned rect, .house .planned line, .house .planned polygon { stroke: var(--graphite); stroke-width: 1.6; stroke-dasharray: 7 7; }
+.house .paid rect, .house .paid polygon { fill: var(--tone); }
+.house .ground { stroke: var(--ink); stroke-width: 3; }
+.house .num circle { fill: var(--proven); stroke: var(--ink); stroke-width: 1.5; }
+.house .num.planned-n circle { fill: var(--sheet); stroke: var(--graphite); }
+.house .num text { font: 600 17px 'IBM Plex Sans'; fill: var(--ink); text-anchor: middle; }
+
+/* Problem */
+.ask li { display: grid; grid-template-columns: 1fr auto; gap: 24px; }
+.ask li span:last-child { color: var(--bad); font-size: 20px; align-self: center; }
+.need li { font-size: 30px; }
+.need li b { font-weight: 600; }
+
+/* Ledger table */
+table.ledger { width: 100%; border-collapse: collapse; font-size: 20px; background: var(--sheet); }
+table.ledger th, table.ledger td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+table.ledger thead th { color: var(--graphite); font-weight: 500; border-bottom: 2px solid var(--ink); }
+table.ledger td.pub { border-left: 4px solid var(--proven); }
+
+/* Steps */
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px 48px; }
+ol.steps li { counter-increment: s; position: relative; padding-top: 64px; font-size: 23px; }
+ol.steps li::before {
+  content: counter(s); position: absolute; top: 0; left: 0; width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid var(--ink); font: 600 21px/40px 'IBM Plex Sans'; text-align: center; background: var(--sheet);
+}
+ol.steps li.chain::before { background: var(--proven); }
+ol.steps li b { display: block; font-size: 27px; margin-bottom: 6px; }
+.key { margin-top: 44px; font-size: 20px; color: var(--graphite); display: flex; gap: 40px; }
+.key span::before { content: ''; display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink); margin-right: 10px; vertical-align: -3px; }
+.key .k-chain::before { background: var(--proven); }
+
+pre.snippet {
+  font: 400 19px/1.5 'IBM Plex Mono', monospace; background: var(--paper); border: 1px solid var(--hairline);
+  padding: 22px 26px; margin: 0; white-space: pre; color: var(--ink);
+}
+pre.snippet .c { color: var(--graphite); }
+
+.shot { width: 100%; height: 600px; object-fit: cover; object-position: top left; border: 1px solid var(--hairline); display: block; }
+.stat { font-size: 64px; font-weight: 600; line-height: 1; }
+.stat-label { font-size: 22px; color: var(--graphite); margin-top: 8px; }
+.evidence { display: grid; gap: 34px; }
+
+.facts li { font-size: 30px; padding: 20px 0; }
+.facts li.none { color: var(--bad); }
+
+.roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 3px solid var(--ink); }
+.roadmap > div { padding: 28px 36px 0 0; position: relative; }
+.roadmap > div::before { content: ''; position: absolute; top: -12px; left: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--sheet); border: 3px solid var(--ink); }
+.roadmap > div.done::before { background: var(--proven); }
+.roadmap h3 { font-size: 28px; }
+.roadmap ul { margin: 12px 0 0; padding-left: 22px; font-size: 22px; }
+.roadmap li { margin-bottom: 10px; }
+
+.close h1 { font-size: 72px; max-width: 18ch; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide" data-sheet="Veridom Milestones   1 / 10">
+  <div class="title">
+    <div>
+      <h1>Veridom Milestones</h1>
+      <p class="sub">Construction-loan draws, proven without handing over the paperwork.</p>
+      <p class="meta">A Veridom module on Midnight<br />Midnight Buildathon, wave 3</p>
+    </div>
+    <svg class="house" viewBox="0 0 640 420" aria-label="Elevation of a house with the first three stages inked in">
+      <line x1="40" y1="330" x2="600" y2="330" class="ground" />
+      <g class="paid"><rect x="110" y="306" width="420" height="24" /><rect x="118" y="330" width="34" height="34" /><rect x="303" y="330" width="34" height="34" /><rect x="488" y="330" width="34" height="34" /></g>
+      <g class="paid"><rect x="130" y="160" width="380" height="146" /><line x1="130" y1="234" x2="510" y2="234" /></g>
+      <g><polygon points="104,162 320,52 536,162" /><line x1="150" y1="162" x2="320" y2="74" /></g>
+      <g class="planned"><rect x="166" y="178" width="58" height="42" /><rect x="416" y="178" width="58" height="42" /><rect x="166" y="250" width="58" height="42" /><rect x="416" y="250" width="58" height="42" /><rect x="296" y="240" width="48" height="66" /><rect x="302" y="112" width="36" height="30" /></g>
+      <g class="planned"><rect x="430" y="70" width="22" height="56" /></g>
+      <g class="num"><circle cx="70" cy="350" r="15" /><text x="70" y="356">1</text></g>
+      <g class="num"><circle cx="70" cy="230" r="15" /><text x="70" y="236">2</text></g>
+      <g class="num"><circle cx="70" cy="110" r="15" /><text x="70" y="116">3</text></g>
+      <g class="num planned-n"><circle cx="575" cy="200" r="15" /><text x="575" y="206">4</text></g>
+      <g class="num planned-n"><circle cx="575" cy="110" r="15" /><text x="575" y="116">5</text></g>
+      <g class="num planned-n"><circle cx="575" cy="290" r="15" /><text x="575" y="296">6</text></g>
+    </svg>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-sheet="The problem   2 / 10">
+  <h2>Every tranche costs the builder their privacy.</h2>
+  <div class="cols">
+    <div>
+      <h3>What the bank asks for at each draw</h3>
+      <ul class="plain ask">
+        <li><span>Site photos</span><span>copied</span></li>
+        <li><span>Invoices and amounts paid</span><span>copied</span></li>
+        <li><span>Contractors and their contracts</span><span>copied</span></li>
+        <li><span>Personal and family data</span><span>copied</span></li>
+      </ul>
+      <p class="muted" style="margin-top:24px">The copies stay in the bank's systems and travel to surveyors. The builder keeps no say over them.</p>
+    </div>
+    <div>
+      <h3>What the bank needs to decide</h3>
+      <ul class="plain need">
+        <li>Is <b>stage <i>k</i> finished</b>?</li>
+        <li>Did an <b>inspector the bank trusts</b> confirm it?</li>
+        <li>Does the payout <b>stay within the approved loan</b>?</li>
+      </ul>
+      <p style="margin-top:24px">Three yes-or-no facts. None of them needs the documents themselves.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-sheet="Why privacy, why Midnight   3 / 10">
+  <h2>Facts on a shared ledger, files on the builder's device.</h2>
+  <div class="cols-3">
+    <div>
+      <h3>A shared database</h3>
+      <p>Everyone has to trust whoever runs it, and it still holds every document.</p>
+    </div>
+    <div>
+      <h3>A public blockchain</h3>
+      <p>Verifiable, but every amount and every payment link would be readable by anyone, for ever.</p>
+    </div>
+    <div>
+      <h3>Midnight</h3>
+      <p>The public ledger holds outcomes and commitments. Private state holds the data. Zero-knowledge proofs connect the two, and selective disclosure opens one fact when someone needs it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-sheet="How it works   4 / 10">
+  <h2>One stage, from site visit to payout.</h2>
+  <ol class="steps">
+    <li class="chain"><b>The bank sets up the loan</b>Registers its inspectors, and the loan as a commitment to the limit and stage caps.</li>
+    <li class="chain"><b>The builder accepts</b>Proves it holds exactly the terms the bank committed to.</li>
+    <li><b>The inspector signs</b>After the site visit: one signature over this contract, project, stage and evidence bundle.</li>
+    <li class="chain"><b>The builder proves the stage</b>Stage <i>k</i> complete, signed by an authorised inspector, signature never used before.</li>
+    <li class="chain"><b>The builder requests the tranche</b>Within the stage cap, and the running total within the loan limit. No amount is published.</li>
+    <li class="chain"><b>The bank pays, the auditor checks</b>The bank checks the amount against its commitment. An auditor gets one fact, with consent on chain.</li>
+  </ol>
+  <div class="key"><span class="k-chain">Transaction with a ZK proof</span><span>Off chain</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-sheet="On Midnight   5 / 10">
+  <h2 style="margin-bottom:36px">What the chain sees, and what it never sees.</h2>
+  <div class="cols" style="grid-template-columns: 1.05fr 1fr; gap: 56px">
+    <table class="ledger">
+      <thead><tr><th>Public ledger</th><th>Private state (witnesses)</th></tr></thead>
+      <tbody>
+        <tr><td class="pub">Lender and builder key hashes</td><td>Lender and builder secrets</td></tr>
+        <tr><td class="pub">Terms commitment</td><td>Loan limit, stage caps, salt</td></tr>
+        <tr><td class="pub">Drawn-total commitment</td><td>Running total drawn</td></tr>
+        <tr><td class="pub">Stage <i>k</i>: status, inspector id</td><td>Evidence bundle hash, signature</td></tr>
+        <tr><td class="pub">Tranche commitment</td><td>Tranche amount</td></tr>
+        <tr><td class="pub">Spent-signature nullifiers</td><td></td></tr>
+        <tr><td class="pub">Salted consent receipts</td><td>Who received which fact</td></tr>
+      </tbody>
+    </table>
+<pre class="snippet"><span class="c">// requestTranche, inside the proof</span>
+const terms = openTerms(pid, p);
+const drawn = openDrawn(pid, p);
+const amount = trancheAmount(pid, st);
+assert(amount &gt; 0, "...");
+assert(amount &lt;= capForStage(
+         terms.stageCaps, st), "...");
+const newTotal = drawn + amount;
+assert(newTotal &lt;= terms.limit,
+  "Cumulative draw would exceed
+   the approved loan limit");</pre>
+  </div>
+  <p class="muted" style="max-width:62ch;margin-top:24px;font-size:20px">Compact 0.31.1, 8 provable circuits. Inspector signatures are verified inside the proof, caller identity comes from witness secrets, and write-back witnesses keep the private running total.</p>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-sheet="Demo   6 / 10">
+  <h2 style="margin-bottom:32px">It runs, with real proofs.</h2>
+  <div class="cols" style="grid-template-columns: 1.35fr 1fr; gap: 56px">
+    <img class="shot" src="../images/ui-two-stages-paid.png" alt="The app after two paid stages" />
+    <div class="evidence">
+      <div><div class="stat">50</div><div class="stat-label">simulator tests pass: over-limit, rogue inspector, replay, no consent, leak scan</div></div>
+      <div><div class="stat">9</div><div class="stat-label">transactions with ZK proofs on a local Midnight devnet, about 25 s each</div></div>
+      <div><div class="stat">4</div><div class="stat-label">roles in one browser app: bank, builder, inspector, auditor; Lace-ready</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-sheet="Traction   7 / 10">
+  <h2>Where Veridom stands today.</h2>
+  <ul class="plain facts">
+    <li>Veridom is live at <b>veridom.space</b>: it tracks a private home build against the approved plans, with a diary, photos and inspections.</li>
+    <li>Construction-industry specialists are testing it and have given positive feedback.</li>
+    <li>We are in talks with banks and investment firms.</li>
+    <li>The first pilot is the founder's own first build.</li>
+    <li class="none">No paying users yet.</li>
+  </ul>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-sheet="Market and model   8 / 10">
+  <h2>The lender pays; the builder keeps the data.</h2>
+  <div class="cols-3">
+    <div>
+      <h3>Who uses it</h3>
+      <p>Banks and building societies that finance private home construction and pay it out stage by stage. Builders, through the Veridom app. Inspectors, with a signing tool.</p>
+    </div>
+    <div>
+      <h3>Who pays</h3>
+      <p>The lender, per active construction loan: fewer documents to collect, store and protect, and a verifiable record of every release. Builders use it free as part of Veridom.</p>
+    </div>
+    <div>
+      <h3>How it spreads</h3>
+      <p>Start with the lenders Veridom already talks to, on private builds. The same proof fits other staged payouts: completion checks for insurers, stage-based grants and subsidies.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-sheet="Roadmap   9 / 10">
+  <h2>From devnet to a first bank pilot.</h2>
+  <div class="roadmap">
+    <div class="done">
+      <h3>Wave 3, done</h3>
+      <ul>
+        <li>Compact contract, 8 circuits</li>
+        <li>50 simulator tests, devnet run with real proofs</li>
+        <li>Four-role web app, Lace wiring</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Next</h3>
+      <ul>
+        <li>Deploy on Preprod through Lace</li>
+        <li>Evidence bundles straight from the Veridom diary</li>
+        <li>Inspector signing app with hardware-held keys</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Then</h3>
+      <ul>
+        <li>Pilot on the founder's own build</li>
+        <li>Pilot with a lender from current talks</li>
+        <li>Standard-library Schnorr once ledger 9 is live</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide close" data-sheet="Veridom Milestones   10 / 10">
+  <div style="padding-top:110px">
+    <h1>The bank sees the facts. The builder keeps the files.</h1>
+    <p style="margin-top:48px;font-size:30px;max-width:none">We are looking for a lender to pilot with, and for feedback from the Midnight team.</p>
+    <p class="muted" style="font-size:24px;max-width:none">veridom.space<br />Open source under Apache-2.0</p>
+  </div>
+</section>
+
+</body>
+</html>
