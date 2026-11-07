@@ -64,7 +64,14 @@ export type ReceivedPacket = { packet: DisclosurePacket; verification?: Verifica
 export const INSPECTOR_ID = 7n;
 
 const describeError = (e: unknown): string => {
-  const raw = e instanceof Error ? e.message : String(e);
+  console.error('[veridom]', e);
+  let raw = e instanceof Error ? e.message : String(e);
+  if (!raw || raw === '[object Object]') {
+    const o = e as { name?: string; code?: string | number; reason?: string; cause?: unknown; _tag?: string };
+    const cause = o?.cause instanceof Error ? o.cause.message : o?.cause ? JSON.stringify(o.cause) : '';
+    raw = [o?._tag, o?.name, o?.code, o?.reason, cause].filter(Boolean).join(': ');
+    if (!raw) { try { raw = JSON.stringify(e); } catch { raw = 'unknown error'; } }
+  }
   // compact-runtime reports failed asserts as "failed assert: <message>".
   const m = raw.match(/failed assert:\s*(.*)$/s);
   return (m ? m[1] : raw).trim();
