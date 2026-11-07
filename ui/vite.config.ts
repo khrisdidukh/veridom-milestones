@@ -12,6 +12,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // Targets ES2022, which has native top-level await (used by the WASM runtime),
 // so vite-plugin-top-level-await is not needed.
 export default defineConfig(({ mode }) => ({
+  base: process.env.BASE_PATH ?? '/',
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
     global: 'globalThis',

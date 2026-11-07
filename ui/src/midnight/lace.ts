@@ -116,7 +116,7 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
   if (!config.proverServerUri) throw new Error('Lace has no proof server configured (Settings > Midnight > Local proof server).');
 
   const addresses = await wallet.getShieldedAddresses();
-  const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(window.location.origin, fetch.bind(window));
+  const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(assetBase(), fetch.bind(window));
   const proofProvider = httpClientProofProvider(config.proverServerUri, zkConfigProvider);
   const publicDataProvider = indexerPublicDataProvider(
     config.indexerUri,
@@ -162,10 +162,13 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
   };
 }
 
+// Assets live next to the page, also when the site is served from a sub-path (GitHub Pages).
+const assetBase = () => (window.location.origin + import.meta.env.BASE_URL).replace(/\/$/, '');
+
 const compiledContract = () =>
   CompiledContract.make<VeridomContract>('VeridomMilestones', Contract).pipe(
     CompiledContract.withWitnesses(witnesses),
-    CompiledContract.withCompiledFileAssets(window.location.origin),
+    CompiledContract.withCompiledFileAssets(assetBase()),
   );
 
 export class LaceBackend implements MilestonesBackend {
