@@ -14,9 +14,9 @@ import type { ConnectedAPI, Configuration, InitialAPI } from '@midnight-ntwrk/da
 import { encodeContractAddress } from '@midnight-ntwrk/compact-runtime';
 import * as ledgerApi from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { createProofProvider } from '@midnight-ntwrk/midnight-js-types';
 import type { MidnightProvider, PrivateStateProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { deployContract, findDeployedContract, submitCallTx } from '@midnight-ntwrk/midnight-js-contracts';
@@ -113,11 +113,13 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
   const status = await wallet.getConnectionStatus();
   if (status.status === 'connected') setNetworkId(status.networkId);
   else setNetworkId(networkId);
-  if (!config.proverServerUri) throw new Error('Lace has no proof server configured (Settings > Midnight > Local proof server).');
 
   const addresses = await wallet.getShieldedAddresses();
   const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(assetBase(), fetch.bind(window));
-  const proofProvider = httpClientProofProvider(config.proverServerUri, zkConfigProvider);
+  // Proofs are made the way the user chose in Lace (Settings > Midnight > Proof generator):
+  // in the wallet itself (WASM) or by the proof server configured there.
+  const provingProvider = await wallet.getProvingProvider(zkConfigProvider.asKeyMaterialProvider());
+  const proofProvider = createProofProvider(provingProvider as unknown as Parameters<typeof createProofProvider>[0]);
   const publicDataProvider = indexerPublicDataProvider(
     config.indexerUri,
     config.indexerWsUri,
@@ -181,7 +183,7 @@ export class LaceBackend implements MilestonesBackend {
     private readonly session: LaceSession,
     readonly contractAddress: string,
   ) {
-    this.where = `Lace wallet, network "${session.networkId}", proofs by ${session.config.proverServerUri}`;
+    this.where = `Lace wallet, network "${session.networkId}", proofs by ${session.config.proverServerUri ?? 'Lace (in-wallet)'}`;
     this.contractAddressBytes = encodeContractAddress(contractAddress);
   }
 

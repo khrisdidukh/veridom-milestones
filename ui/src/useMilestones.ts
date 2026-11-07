@@ -146,7 +146,7 @@ export function useMilestones() {
       try {
         const session = await connectLace(networkId, setWalletStatus);
         setLace(session);
-        addLog({ actor: 'bank', action: 'Connect Lace', ok: true, detail: `Connected on "${networkId}". Proof server: ${session.config.proverServerUri}` });
+        addLog({ actor: 'bank', action: 'Connect Lace', ok: true, detail: `Connected on "${networkId}". Proofs: ${session.config.proverServerUri ?? 'in Lace (WASM)'}` });
       } catch (e) {
         addLog({ actor: 'bank', action: 'Connect Lace', ok: false, detail: describeError(e) });
       } finally {
