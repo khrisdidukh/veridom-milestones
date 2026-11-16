@@ -10,8 +10,10 @@ import type { Milestones } from '../useMilestones';
 import { euros, short, statusLabel, time } from '../format';
 
 export function Header({ m }: { m: Milestones }) {
-  const [mode, setMode] = useState<'simulator' | 'lace'>('simulator');
-  const [network, setNetwork] = useState('preprod');
+  // A link such as …/?lace=preprod opens straight on the wallet path.
+  const wanted = new URLSearchParams(window.location.search).get('lace');
+  const [mode, setMode] = useState<'simulator' | 'lace'>(wanted === null ? 'simulator' : 'lace');
+  const [network, setNetwork] = useState(wanted && ['preprod', 'preview', 'undeployed'].includes(wanted) ? wanted : 'preprod');
   const [address, setAddress] = useState(import.meta.env.VITE_CONTRACT_ADDRESS ?? '');
 
   return (
@@ -39,9 +41,14 @@ export function Header({ m }: { m: Milestones }) {
               </button>
             </div>
             {mode === 'simulator' ? (
-              <button disabled={m.busy !== null} onClick={m.deploySimulator}>
-                Deploy contract
-              </button>
+              <div className="inline-form">
+                <button disabled={m.busy !== null} onClick={() => m.runGuided('simulator')}>
+                  Run stage 1 for me
+                </button>
+                <button className="secondary" disabled={m.busy !== null} onClick={m.deploySimulator}>
+                  Deploy contract
+                </button>
+              </div>
             ) : !m.lace ? (
               <div className="inline-form">
                 <label>
@@ -58,7 +65,10 @@ export function Header({ m }: { m: Milestones }) {
               </div>
             ) : (
               <div className="inline-form">
-                <button disabled={m.busy !== null} onClick={m.deployLace}>
+                <button disabled={m.busy !== null} onClick={() => m.runGuided('lace')}>
+                  Deploy and run stage 1
+                </button>
+                <button className="secondary" disabled={m.busy !== null} onClick={m.deployLace}>
                   Deploy contract
                 </button>
                 <label>
@@ -88,6 +98,91 @@ export function Header({ m }: { m: Milestones }) {
         </p>
       )}
     </header>
+  );
+}
+
+const download = (name: string, text: string) => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/** The guided run as a checklist, and the public record of the last run on a network. */
+export function GuidedRun({ m }: { m: Milestones }) {
+  const [copied, setCopied] = useState(false);
+  const steps = m.guided;
+  const ev = m.evidence;
+  if (!steps && !ev) return null;
+  const failed = steps?.find((s) => s.status === 'failed');
+  const done = steps?.every((s) => s.status === 'done');
+  const onNetwork = ev && ev.network !== 'simulator';
+  const json = ev ? JSON.stringify(ev, null, 2) : '';
+  return (
+    <section className="guided" aria-label="Guided run">
+      {steps && (
+        <>
+          <h2>
+            Stage 1, end to end
+            <span className="guided-count">
+              {steps.filter((s) => s.status === 'done').length} of {steps.length} transactions
+            </span>
+          </h2>
+          <ol className="guided-steps">
+            {steps.map((s) => (
+              <li key={s.key} className={`g-${s.status}`} aria-current={s.status === 'running' ? 'step' : undefined}>
+                <span className="g-mark" aria-hidden="true" />
+                <div>
+                  <strong>{s.label}</strong>
+                  <span className="g-proves">{s.proves}</span>
+                  {s.status === 'running' && <span className="g-state">{m.walletStatus ?? m.busy ?? 'Working'}</span>}
+                  {s.txId && (
+                    <span className="g-tx">
+                      tx <code title={s.txId}>{short(s.txId, 10)}</code>
+                      {s.blockHeight !== undefined && <> block {s.blockHeight}</>}
+                      {s.seconds !== undefined && <>, {s.seconds} s</>}
+                    </span>
+                  )}
+                  {s.status === 'failed' && <span className="g-error">{s.detail}</span>}
+                </div>
+              </li>
+            ))}
+          </ol>
+          {failed && m.backend && (
+            <button disabled={m.busy !== null} onClick={() => m.runGuided(m.backend!.mode)}>
+              Try again from “{failed.label}”
+            </button>
+          )}
+          {done && <p className="guided-done">All eight transactions are on the ledger. Keep going by hand in the role panels: stage 2 is next.</p>}
+        </>
+      )}
+      {onNetwork && ev && (
+        <div className="evidence-record">
+          <h3>Public record of {steps ? 'this' : 'the last'} run on “{ev.network}”</h3>
+          {ev.contractAddress && (
+            <p>
+              Contract <code>{ev.contractAddress}</code>
+            </p>
+          )}
+          <p className="hint">Addresses, transaction ids and block heights only. No secret, amount or evidence hash is in this record.</p>
+          <div className="inline-form">
+            <button className="secondary" onClick={() => download(`veridom-milestones-${ev.network}-run.json`, json)}>
+              Download the record
+            </button>
+            <button
+              className="secondary"
+              onClick={async () => {
+                await navigator.clipboard.writeText(json);
+                setCopied(true);
+              }}
+            >
+              {copied ? 'Copied' : 'Copy the record'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

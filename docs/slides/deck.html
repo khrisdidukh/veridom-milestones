@@ -237,8 +237,8 @@ assert(newTotal &lt;= terms.limit,
     <img class="shot" src="../images/ui-two-stages-paid.png" alt="The app after two paid stages" />
     <div class="evidence">
       <div><div class="stat">50</div><div class="stat-label">simulator tests pass: over-limit, rogue inspector, replay, no consent, leak scan</div></div>
-      <div><div class="stat">9</div><div class="stat-label">transactions with ZK proofs on a local Midnight devnet, about 25 s each</div></div>
-      <div><div class="stat">4</div><div class="stat-label">roles in one browser app: bank, builder, inspector, auditor; Lace-ready</div></div>
+      <div><div class="stat">17</div><div class="stat-label">transactions with ZK proofs on a local Midnight devnet: 9 headless, 8 from the web app through the wallet connector</div></div>
+      <div><div class="stat">1</div><div class="stat-label">button runs a whole stage for four roles: bank, builder, inspector, auditor. Live in the browser, no install</div></div>
     </div>
   </div>
 </section>
@@ -282,15 +282,16 @@ assert(newTotal &lt;= terms.limit,
       <h3>Wave 3, done</h3>
       <ul>
         <li>Compact contract, 8 circuits</li>
-        <li>50 simulator tests, devnet run with real proofs</li>
-        <li>Four-role web app, Lace wiring</li>
+        <li>50 simulator tests, 17 proven transactions on a devnet</li>
+        <li>Four-role web app, live, tested through the wallet connector</li>
       </ul>
     </div>
     <div>
       <h3>Next</h3>
       <ul>
-        <li>Deploy on Preprod through Lace</li>
+        <li>Preprod run through Lace: one link, one button</li>
         <li>Evidence bundles straight from the Veridom diary</li>
+        <li>Encrypted private state, one session per role</li>
         <li>Inspector signing app with hardware-held keys</li>
       </ul>
     </div>
@@ -310,7 +311,7 @@ assert(newTotal &lt;= terms.limit,
   <div style="padding-top:110px">
     <h1>The bank sees the facts. The builder keeps the files.</h1>
     <p style="margin-top:48px;font-size:30px;max-width:none">We are looking for a lender to pilot with, and for feedback from the Midnight team.</p>
-    <p class="muted" style="font-size:24px;max-width:none">veridom.space<br />Open source under Apache-2.0</p>
+    <p class="muted" style="font-size:24px;max-width:none">Try it: khrisdidukh.github.io/veridom-milestones<br />Code: github.com/khrisdidukh/veridom-milestones, Apache-2.0<br />Product: veridom.space</p>
   </div>
 </section>
 

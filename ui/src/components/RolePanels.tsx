@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useState, type ReactNode } from 'react';
-import { StageStatus, sha256, toHex, type EvidenceItem, type FactName } from '@veridom/milestones-contract';
+import { StageStatus, type EvidenceItem, type FactName } from '@veridom/milestones-contract';
+import { sampleBundle } from '../guided';
 import { INSPECTOR_ID, factLabel, type Actor, type Milestones } from '../useMilestones';
 import { centsFromInput, euros, short } from '../format';
 
@@ -158,24 +159,6 @@ function FactRow({ label, value }: { label: string; value: string }) {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_CAPS = ['60000', '95000', '55000', '45000', '40000', '25000'];
-
-const sampleBundle = async (stage: number, name: string): Promise<EvidenceItem[]> => {
-  const slug = name.toLowerCase().replace(/\s+/g, '-');
-  const nonce = toHex(globalThis.crypto.getRandomValues(new Uint8Array(8)));
-  const mk = async (kind: EvidenceItem['kind'], file: string, size: number): Promise<EvidenceItem> => ({
-    kind,
-    name: file,
-    size,
-    sha256: toHex(await sha256(`${nonce}:${file}`)),
-  });
-  return Promise.all([
-    mk('photo', `${slug}-north.jpg`, 2_314_002),
-    mk('photo', `${slug}-south.jpg`, 2_198_771),
-    mk('photo', `${slug}-detail.jpg`, 1_604_310),
-    mk('invoice', `invoice-stage-${stage + 1}.pdf`, 84_211),
-    mk('contractor', `contractor-record-stage-${stage + 1}.json`, 1_102),
-  ]);
-};
 
 function BuilderPanel({ m }: { m: Milestones }) {
   const [limit, setLimit] = useState('300000');

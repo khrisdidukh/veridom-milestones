@@ -25,11 +25,13 @@ tracks a private home build against the approved plans with a diary, photos and 
 | Contract | [`contract/src/veridom-milestones.compact`](contract/src/veridom-milestones.compact), 8 provable circuits, 8 pure circuits |
 | Toolchain | `compact` 0.5.3, compiler **0.31.1**, language 0.23, compact-runtime 0.16.0, midnight-js 4.1.1 (the [support matrix](https://docs.midnight.network/relnotes/support-matrix) for Preview, Preprod and Mainnet) |
 | Compile record | [`contract/build-evidence/compile.log`](contract/build-evidence/compile.log) |
-| Tests | 50 simulator tests (`npm test`), 5 end-to-end tests with real ZK proofs on a local devnet (`npm run test:e2e`), a browser flow test (`npm run test:ui`) |
-| Devnet run record | [`contract/build-evidence/local-devnet-run.log`](contract/build-evidence/local-devnet-run.log): 9 proven transactions, tx ids and blocks |
+| Live app | **<https://khrisdidukh.github.io/veridom-milestones/>**: press **Run stage 1 for me**. No wallet, no install |
+| Tests | 50 simulator tests (`npm test`); 6 end-to-end tests with real ZK proofs on a local devnet (`npm run test:e2e`), one of which drives the web app through the wallet connector; a browser flow test (`npm run test:ui`) |
+| Devnet run record | [`contract/build-evidence/local-devnet-run.log`](contract/build-evidence/local-devnet-run.log): 17 proven transactions with tx ids and blocks (9 from the headless run, 8 from the web app) |
 | Frontend | React + TypeScript, runs the contract in the browser (simulator) or through the Lace wallet |
-| Pitch | [slide deck (PDF)](docs/slides/veridom-milestones-deck.pdf) ([HTML source](docs/slides/deck.html)), [demo video script](docs/demo-script.md) |
-| Demo video | _link added before submission_ |
+| Preprod | Not deployed yet. One link and two buttons: see [Deploying to Preprod](#deploying-to-preprod) |
+| Pitch | [slide deck (PDF)](docs/slides/veridom-milestones-deck.pdf) ([HTML source](docs/slides/deck.html)) |
+| Demo video | [docs/video/veridom-milestones-demo.mp4](docs/video/veridom-milestones-demo.mp4) (2 min 30 s, captions, no sound needed) |
 | License | [Apache-2.0](LICENSE); third-party attribution in [NOTICE](NOTICE) |
 
 ![The app after two paid stages: elevation drawing, public draw schedule, bank actions](docs/images/ui-two-stages-paid.png)
@@ -39,7 +41,9 @@ tracks a private home build against the approved plans with a diary, photos and 
 ## What we built this wave
 
 This is our first Midnight Buildathon submission (wave 3). Everything in this repository was written during
-the wave.
+the wave, in two rounds.
+
+**Round 1 (4 to 7 November): the protocol.**
 
 - **Compact contract** with lender and builder roles derived from witness secrets, an inspector registry, a
   commitment to the loan terms, in-circuit Schnorr verification of inspector attestations, spent-signature
@@ -53,16 +57,38 @@ the wave.
 - **End-to-end run on a local Midnight devnet** (node 1.0.400, indexer 4.3.5, proof server 8.1.3): deploy plus 8
   circuit calls with real ZK proofs, state read back from the indexer, an auditor packet verified against it.
 - **Frontend** with four roles, a dual view of the public ledger and the builder's private state, and a log of
-  what moves on chain next to what moves off chain. It runs fully in the browser now, and is wired for Lace.
-- **Pitch material**: slide deck and a demo video script.
+  what moves on chain next to what moves off chain.
 
-Next wave: deployment on Preprod through Lace (see [the stop-point below](#deploying-to-preprod)), and
-connecting the evidence bundle to the Veridom diary so a stage's photos and inspection report feed the
-proof directly.
+**Round 2 (16 November): from "wired for a wallet" to "tested through the wallet connector".**
+
+- **Guided run.** One button deploys a fresh contract and walks stage 1 through all eight circuits, as a
+  checklist that says what each transaction proves and shows its tx id and block. It works in the simulator
+  and through the wallet, stops at the first failure and continues from that step.
+- **The web app tested through the DApp Connector on a devnet.** A new end-to-end test opens the real app in
+  Chromium, gives it a stand-in for the Lace extension backed by the devnet's funded wallet, presses the one
+  button, and then reads the contract back from the indexer on its own. Eight proven transactions come from
+  the browser. Before this, the wallet path was only type-checked.
+- **A public run record.** The app keeps the contract address, tx ids and block heights of a network run in
+  the browser and offers them as a JSON file. A test checks that no amount, salt or secret is in it.
+- **Wallet checks.** The app reports whether the wallet has tDUST for fees before the first transaction, and
+  uses the wallet's proof server directly if the wallet offers no prover of its own.
+- **Live app** on GitHub Pages with the proving keys next to it, a demo video and an updated deck.
+
+Next: the Preprod run (see [the stop-point below](#deploying-to-preprod)), and connecting the evidence bundle
+to the Veridom diary so a stage's photos and inspection report feed the proof directly. The full list is in
+[Roadmap](#roadmap).
 
 ---
 
 ## How judges can test it
+
+### 0. In the browser, nothing to install
+
+Open <https://khrisdidukh.github.io/veridom-milestones/> and press **Run stage 1 for me**. The compiled
+circuits run in your tab on the official `compact-runtime`. Then continue by hand with stage 2 in the role
+panels, or follow the walk-through in option 2.
+
+### Locally
 
 Requirements: Node.js 22, npm 11 (`npx npm@11 ...` works if your npm is older). Docker only for option 3.
 
@@ -86,7 +112,8 @@ Expected: `Test Files 5 passed, Tests 50 passed`.
 npm run dev            # http://localhost:5173
 ```
 
-Keep **Simulator** selected and press **Deploy contract**. Then walk through the roles on the right:
+Keep **Simulator** selected. **Run stage 1 for me** does steps 1 to 9 below in one go. To do them yourself,
+press **Deploy contract** and walk through the roles on the right:
 
 1. **Bank**: Register inspector #7.
 2. **Builder**: Send loan application to the bank (the default plan: limit EUR 300,000, six stages).
@@ -112,12 +139,20 @@ The same flow is automated: with `npm run dev` running, `npx playwright install 
 ```bash
 npm run compile        # full compile with proving keys (~45 s); keys are not committed
 npm run devnet:up      # node 1.0.400, indexer 4.3.5, proof server 8.1.3 (Docker)
+npx playwright install chromium   # once, for the web-app test
 npm run test:e2e
 npm run devnet:down
 ```
 
-Deploys the contract and runs the whole flow through midnight-js with proofs from the local proof server.
-Each proven transaction takes about 25 seconds. The run writes
+Two test files run, about 15 minutes together on a laptop-class machine:
+
+- `local-devnet.e2e.test.ts` deploys the contract and runs the whole flow through midnight-js with a headless
+  wallet, including a replayed attestation and an over-limit tranche that never reach the chain.
+- `lace-connector.e2e.test.ts` opens the web app in Chromium with a stand-in for the Lace extension (DApp
+  Connector API 4.0.1 shape, backed by the devnet's funded wallet), presses **Deploy and run stage 1**, waits
+  for eight proven transactions and checks the contract state on the indexer independently of the page.
+
+Each proven transaction takes 25 to 60 seconds. The run writes
 [`contract/build-evidence/local-devnet-run.log`](contract/build-evidence/local-devnet-run.log).
 The wallet is the local devnet's public genesis seed, which only exists on a local network.
 
@@ -176,16 +211,17 @@ contract/
   src/simulator.ts                 in-process simulator used by tests and the UI
   src/managed/veridom-milestones/  compiler output (bindings, ZKIR, verifier keys)
   test/                            50 simulator tests
-  e2e/                             local devnet end-to-end test
+  e2e/                             local devnet end-to-end tests (headless, and the web app via the connector)
   build-evidence/                  compile record, devnet run record
 ui/
-  src/useMilestones.ts             app state: parties, actions, off-chain hand-overs
+  src/useMilestones.ts             app state: parties, actions, off-chain hand-overs, the guided run
+  src/guided.ts                    plan and public record of the guided run
   src/backend/simulator.ts         contract in the browser
   src/midnight/lace.ts             Lace wallet + midnight-js providers
   src/components/                  drawing, role panels, ledger views
   e2e/simulator-flow.mjs           browser flow test
 devnet/compose.yml                 local Midnight network
-docs/                              architecture, Preprod guide, slides, demo script, submission notes
+docs/                              architecture, Preprod guide, slides, demo video, submission notes
 ```
 
 ---
@@ -256,30 +292,50 @@ the inspector and the auditor compute exactly what the contract computes.
 - The inspector's key lives in the browser in this demo; production keys belong in an HSM or hardware wallet.
 - In the demo one person plays all four roles in one tab. In production each party runs its own instance and
   keeps its own private state.
+- In wallet mode the private states live in the tab's memory. Reloading the page loses the bank's and the
+  builder's secrets, so a contract deployed from a tab can only be continued from that tab.
+- Not deployed on a public network yet (see below). All on-chain evidence so far is from a local devnet.
 
 ---
 
 ## Deploying to Preprod
 
-Everything up to deployment is built. The Lace path is implemented in
-[`ui/src/midnight/lace.ts`](ui/src/midnight/lace.ts) and type-checked against midnight-js 4.1.1; the same
-midnight-js calls (`deployContract`, `submitCallTx`, indexer and proof-server providers) ran on the local
-devnet with a headless wallet. The Lace wallet provider itself has not been exercised yet, because that needs
-a browser with the extension and a funded wallet. What remains needs a person with a wallet:
+**Status: not deployed yet.** We say so plainly because the last step needs a person: a Lace wallet with test
+tokens and a click on each approval. Everything up to that click is built and tested:
 
-1. Install [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk), create a
-   Midnight wallet and switch it to **Preprod**.
-2. In Lace, **Settings > Midnight**, choose the local proof server `http://localhost:6300`, and run one:
-   `docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3`.
-3. Copy the unshielded address (`mn_addr_preprod1...`), request tNIGHT at the
-   [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/) (captcha), then in Lace select
-   **Generate tDUST** and confirm. Wait until the tDUST tank shows a balance.
-4. `npm run compile` (proving keys are served to the prover from the compiler output), then `npm run dev`.
-5. In the app choose **Lace wallet**, network **Preprod**, **Connect Lace**, then **Deploy contract**. Approve the
-   transaction in Lace. Note the contract address shown in the header.
-6. Run the same role flow as above; each step asks Lace to approve a transaction.
+- the same midnight-js calls (`deployContract`, `submitCallTx`, indexer and proof providers) run on the local
+  devnet with a headless wallet;
+- the app's wallet path in [`ui/src/midnight/lace.ts`](ui/src/midnight/lace.ts) runs on the local devnet
+  through a stand-in with the connector's shape (`lace-connector.e2e.test.ts`).
 
-Full detail, including what to put in the README afterwards: [docs/deploy-preprod.md](docs/deploy-preprod.md).
+What that does not cover is the Lace extension itself and the Preprod network.
+
+The run itself is short, because the live app already serves the proving keys:
+
+1. In Chrome with [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on
+   **Preprod**, funded with tNIGHT from the [faucet](https://faucet.preprod.midnight.network/) and with tDUST
+   generated, open <https://khrisdidukh.github.io/veridom-milestones/?lace=preprod>.
+2. Press **Connect Lace** and approve the connection. The log line says whether the wallet has tDUST.
+3. Press **Deploy and run stage 1**. Approve each of the eight transactions in Lace as it comes up.
+4. Press **Download the record**. The file holds the contract address, tx ids and block heights.
+
+If a step fails, the checklist shows the wallet's or the node's message and a button to continue from that
+step. Full detail and a table of known failure causes: [docs/deploy-preprod.md](docs/deploy-preprod.md).
+
+Running a headless deployment from CI instead would need a Blockfrost project id, since Blockfrost has served
+the Preprod indexer since October 2026; we chose the wallet path because that is how a bank or a builder would
+use it.
+
+---
+
+## Roadmap
+
+| When | What |
+| --- | --- |
+| Now | Preprod run through Lace, contract address and tx ids in this README |
+| Next 4 weeks | Evidence bundles straight from the Veridom diary (photos, inspection report, invoices of a stage); private state persisted and encrypted in the browser, so the roles survive a reload; each role in its own session instead of one tab |
+| Next 3 months | Inspector signing app with hardware-held keys; several inspectors per stage (k of n); stage-gated grants as a second use of the same contract |
+| After that | Pilot on the founder's own build, then with a lender; standard-library Schnorr once ledger 9 reaches Preprod and Mainnet |
 
 ---
 

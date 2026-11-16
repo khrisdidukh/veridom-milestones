@@ -104,9 +104,15 @@ with two implementations:
 - `SimulatorBackend`: the compiled contract and the official compact-runtime run in the browser tab. No
   network, no proofs; identical circuit logic.
 - `LaceBackend`: DApp Connector API 4.0.1 to Lace, `FetchZkConfigProvider` serving the compiler output,
-  `httpClientProofProvider` to the proof server Lace is configured with, `indexerPublicDataProvider` for
+  proofs through the wallet's own proving provider (in the wallet or on the proof server set in Lace; the app
+  calls that proof server directly only if the wallet offers no prover), `indexerPublicDataProvider` for
   reads, and `deployContract` / `findDeployedContract` / `submitCallTx` from midnight-js 4.1.1. Parties are
-  separate private-state ids.
+  separate private-state ids, held in the tab's memory.
+
+The guided run (`runGuided` in [`ui/src/useMilestones.ts`](../ui/src/useMilestones.ts)) drives either backend
+through the same eight steps and keeps a public record of a network run (contract address, tx ids, block
+heights) in `localStorage`. `contract/e2e/lace-connector.e2e.test.ts` runs it in Chromium on a local devnet
+with a stand-in for the extension, so the wallet path is exercised with real proofs without a human.
 
 Evidence files are hashed with WebCrypto in the browser; only the SHA-256 of the bundle manifest enters a
 witness.

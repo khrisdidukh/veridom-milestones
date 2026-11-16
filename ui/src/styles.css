@@ -834,6 +834,151 @@ footer {
 
 /* ------------------------------------------------------------ responsive */
 
+/* --------------------------------------------------------- guided run */
+
+.guided {
+  background: var(--sheet);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  margin: 20px 0 0;
+}
+.guided h2 {
+  font-size: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.guided-count {
+  font: 400 13px/1.3 var(--mono);
+  color: var(--graphite);
+  font-variant-numeric: tabular-nums;
+}
+.guided-steps {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+  border-left: 1px solid var(--hairline);
+}
+.guided-steps li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 10px;
+  padding: 12px 12px 14px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+.guided-steps strong {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.g-proves,
+.g-tx,
+.g-state,
+.g-error {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--graphite);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.g-tx {
+  font-variant-numeric: tabular-nums;
+}
+.g-state {
+  color: var(--ink);
+}
+.g-error {
+  color: var(--bad);
+}
+.g-mark {
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border: 1.5px solid var(--graphite);
+  border-radius: 50%;
+}
+.g-pending strong,
+.g-pending .g-proves {
+  color: var(--graphite);
+}
+.g-running {
+  background: var(--tone);
+}
+.g-running .g-mark {
+  border-color: var(--ink);
+  border-top-color: transparent;
+  animation: g-spin 0.9s linear infinite;
+}
+.g-done .g-mark {
+  background: var(--proven);
+  border-color: var(--proven);
+  border-radius: 1px;
+  transform: rotate(45deg) scale(0.82);
+}
+.g-failed {
+  background: var(--bad-bg);
+}
+.g-failed .g-mark {
+  border-color: var(--bad);
+  background: var(--bad);
+}
+@keyframes g-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.guided > button {
+  margin-top: 14px;
+}
+.guided-done {
+  margin: 12px 0 0;
+  color: var(--ok);
+}
+.evidence-record {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--hairline);
+}
+.guided > .evidence-record:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.evidence-record h3 {
+  font-size: 14px;
+}
+.evidence-record p {
+  margin: 6px 0;
+}
+@media (max-width: 980px) {
+  .guided-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 680px) {
+  .guided-steps {
+    grid-template-columns: 1fr;
+  }
+  .guided {
+    padding: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-running .g-mark {
+    animation: none;
+  }
+}
+
 @media (max-width: 980px) {
   .site,
   .activity {

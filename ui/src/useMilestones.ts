@@ -38,6 +38,7 @@ import {
 import { SimulatorBackend } from './backend/simulator';
 import type { MilestonesBackend, Party } from './backend/types';
 import { LaceBackend, connectLace, type LaceSession } from './midnight/lace';
+import { GUIDED_PLAN, GUIDED_STEPS, loadEvidence, sampleBundle, saveEvidence, type GuidedStep, type RunEvidence } from './guided';
 
 export type Actor = Party | 'inspector';
 
@@ -64,7 +65,7 @@ export type ReceivedPacket = { packet: DisclosurePacket; verification?: Verifica
 export const INSPECTOR_ID = 7n;
 
 const describeError = (e: unknown): string => {
-  console.error('[veridom]', e);
+  console.warn('[veridom]', e);
   let raw = e instanceof Error ? e.message : String(e);
   if (!raw || raw === '[object Object]') {
     const o = e as { name?: string; code?: string | number; reason?: string; cause?: unknown; _tag?: string };
@@ -102,6 +103,9 @@ export function useMilestones() {
   const [busy, setBusy] = useState<string | null>(null);
   const [walletStatus, setWalletStatus] = useState<string | undefined>();
   const [lastAttested, setLastAttested] = useState<number | null>(null);
+  const [guided, setGuided] = useState<GuidedStep[] | null>(null);
+  const [evidence, setEvidence] = useState<RunEvidence | null>(() => loadEvidence());
+  const guidedCtx = useRef<{ backend?: MilestonesBackend; planned?: PlannedProject; next: number; evidence?: RunEvidence }>({ next: 0 });
   const counter = useRef(0);
 
   const addLog = useCallback((e: Omit<LogEntry, 'id' | 'at'>) => {
@@ -153,7 +157,12 @@ export function useMilestones() {
       try {
         const session = await connectLace(networkId, setWalletStatus);
         setLace(session);
-        addLog({ actor: 'bank', action: 'Connect Lace', ok: true, detail: `Connected on "${networkId}". Proofs: ${session.config.proverServerUri ?? 'in Lace (WASM)'}` });
+        addLog({
+          actor: 'bank',
+          action: 'Connect Lace',
+          ok: true,
+          detail: `Connected on "${networkId}". Proofs: ${session.proving}. ${session.dust === undefined ? '' : session.dust > 0n ? 'The wallet has tDUST for fees.' : 'The wallet has no tDUST yet: in Lace choose Generate tDUST and wait until the balance is above zero.'}`,
+        });
       } catch (e) {
         addLog({ actor: 'bank', action: 'Connect Lace', ok: false, detail: describeError(e) });
       } finally {
@@ -201,6 +210,172 @@ export function useMilestones() {
       }
     },
     [lace, secrets, builderState, refresh, addLog],
+  );
+
+
+  // ------------------------------------------------------------- guided run
+
+  /**
+   * Deploys a fresh contract and walks stage 1 end to end: every circuit once,
+   * each as its own transaction. Works on the simulator and through Lace. Stops
+   * at the first failure; calling it again continues from the failed step.
+   */
+  const runGuided = useCallback(
+    async (target: 'simulator' | 'lace') => {
+      const ctx = guidedCtx.current;
+      const fresh = ctx.next === 0 || ctx.next >= GUIDED_STEPS.length;
+      if (fresh) {
+        ctx.next = 0;
+        ctx.backend = undefined;
+        ctx.planned = undefined;
+        ctx.evidence = {
+          app: 'veridom-milestones',
+          network: target === 'lace' ? (lace?.networkId ?? 'unknown') : 'simulator',
+          startedAt: new Date().toISOString(),
+          steps: [],
+        };
+      }
+      const ev = ctx.evidence!;
+      delete ev.error;
+      const steps: GuidedStep[] = GUIDED_STEPS.map((g, i) => ({
+        ...g,
+        status: i < ctx.next ? 'done' : 'pending',
+        ...(ev.steps.find((x) => x.key === g.key) ?? {}),
+      }));
+      const show = () => setGuided(steps.map((x) => ({ ...x })));
+      const stage = 0;
+      const amount = GUIDED_PLAN.firstTranche;
+
+      const tx = async (actor: Party, circuit: ProvableCircuitId, args: unknown[], label: string, okDetail: string) => {
+        const b = ctx.backend!;
+        setBusy(target === 'lace' ? `${label}: proving, then approve in Lace` : label);
+        try {
+          const out = await b.call(actor, circuit, args);
+          addLog({ actor, action: label, ok: true, detail: okDetail, txId: out.txId });
+          await refresh(b);
+          return out;
+        } catch (e) {
+          addLog({ actor, action: label, ok: false, detail: `Rejected: ${describeError(e)}` });
+          throw e;
+        }
+      };
+
+      const actions: (() => Promise<{ txId?: string; blockHeight?: number } | void>)[] = [
+        async () => {
+          setBusy(target === 'lace' ? 'Deploying the contract: proving, then approve in Lace' : 'Deploying the contract');
+          const bank = createPrivateState(secrets.bank);
+          const others = { builder: createPrivateState(secrets.builder), auditor: createPrivateState(secrets.auditorSecret) };
+          const b = target === 'lace' ? await LaceBackend.deploy(lace!, bank, others) : new SimulatorBackend(bank, others.builder, others.auditor);
+          ctx.backend = b;
+          ev.contractAddress = b.contractAddress;
+          ev.where = b.where;
+          setApplication(null);
+          setInspectionRequests([]);
+          setSignedInspections([]);
+          setTrancheOpenings([]);
+          setPackets([]);
+          setBackend(b);
+          await refresh(b);
+          addLog({ actor: 'bank', action: 'Deploy contract', ok: true, detail: `Deployed at ${b.contractAddress}. The bank's key hash is now the lender.` });
+          return b instanceof LaceBackend ? b.deployTx : undefined;
+        },
+        () => tx('bank', 'registerInspector', [INSPECTOR_ID, secrets.inspector.pk], 'Register inspector', `Inspector #${INSPECTOR_ID} may now sign milestones.`),
+        async () => {
+          const b = ctx.backend!;
+          if (!ctx.planned) {
+            const planned = planProject(await b.getPrivateState('builder'), { limit: GUIDED_PLAN.limit, stageCaps: GUIDED_PLAN.caps });
+            await b.setPrivateState('builder', planned.state);
+            ctx.planned = planned;
+            setApplication(planned);
+            addHandoff('builder', 'bank', 'Loan application: project id, builder key, terms commitment and the terms with their salt');
+          }
+          const p = ctx.planned;
+          return tx('bank', 'registerProject', [p.projectId, pureCircuits.builderKey(secrets.builder), p.termsCommitment, p.stageCount], 'Register project', 'The project is on chain with a commitment to the loan terms. The terms themselves stay in the loan agreement.');
+        },
+        () => tx('builder', 'acceptProject', [ctx.planned!.projectId], 'Accept project', 'Proved that the builder holds the exact terms the bank committed to. Running total opened at zero, privately.'),
+        async () => {
+          const b = ctx.backend!;
+          const p = ctx.planned!;
+          const items = await sampleBundle(stage, DEFAULT_STAGE_NAMES[stage]);
+          const evidenceHash = await evidenceBundleHash(items);
+          addHandoff('builder', 'inspector', `Evidence bundle for stage 1 (${items.length} items) for the site inspection`);
+          const signature = signMilestone(secrets.inspector.sk, b.contractAddressBytes, p.projectId, BigInt(stage), evidenceHash);
+          setSignedInspections([{ stage, evidenceHash, signature }]);
+          addHandoff('inspector', 'builder', 'Signed attestation for stage 1');
+          await b.setPrivateState(
+            'builder',
+            addStageEvidence(await b.getPrivateState('builder'), p.projectId, BigInt(stage), { evidenceHash, inspectorId: INSPECTOR_ID, signature, trancheAmount: amount }),
+          );
+          const out = await tx('builder', 'attestMilestone', [p.projectId, BigInt(stage)], 'Prove stage 1 complete', 'Stage 1 attested. The ledger shows the stage and the inspector, not the evidence.');
+          setLastAttested(stage);
+          return out;
+        },
+        async () => {
+          const b = ctx.backend!;
+          const p = ctx.planned!;
+          await b.setPrivateState('builder', setTrancheAmount(await b.getPrivateState('builder'), p.projectId, BigInt(stage), amount));
+          const out = await tx('builder', 'requestTranche', [p.projectId, BigInt(stage)], 'Request tranche 1', 'Proved: the tranche fits the stage cap and the total stays within the loan limit. No amount was published.');
+          const s = (await b.getPrivateState('builder')).projects[toHex(p.projectId)].stages[String(stage)];
+          setTrancheOpenings([{ stage, amount: s.trancheAmount, salt: s.trancheSalt! }]);
+          addHandoff('builder', 'bank', 'Tranche 1: amount and salt, so the bank can check the commitment and pay');
+          return out;
+        },
+        () => tx('bank', 'releaseTranche', [ctx.planned!.projectId, BigInt(stage)], 'Release tranche 1', 'Tranche for stage 1 marked as paid out.'),
+        async () => {
+          const b = ctx.backend!;
+          const p = ctx.planned!;
+          const nonce = randomBytes32();
+          const out = await tx('builder', 'discloseToAuditor', [p.projectId, BigInt(stage), FactKind.TrancheAmount, secrets.auditorKey, nonce], 'Disclose one fact', 'Consent recorded on chain as a salted receipt. The value goes to the auditor off chain.');
+          const packet = createDisclosurePacket(await b.getPrivateState('builder'), {
+            contractAddress: b.contractAddress,
+            projectId: p.projectId,
+            stage: BigInt(stage),
+            fact: 'TrancheAmount',
+            auditor: secrets.auditorKey,
+            nonce,
+          });
+          const verification = verifyDisclosurePacket(await b.readLedger(), packet, { contractAddress: b.contractAddress, auditor: secrets.auditorKey });
+          setPackets([{ packet, verification }]);
+          addHandoff('builder', 'auditor', 'Disclosure packet: tranche amount, stage 1');
+          ev.auditorChecks = verification.checks.map((c) => ({ label: c.label, pass: c.pass }));
+          return out;
+        },
+      ];
+
+      try {
+        for (let i = ctx.next; i < actions.length; i++) {
+          steps[i].status = 'running';
+          delete steps[i].detail;
+          show();
+          const started = Date.now();
+          try {
+            const out = await actions[i]();
+            steps[i].status = 'done';
+            steps[i].txId = out?.txId;
+            steps[i].blockHeight = out?.blockHeight;
+            steps[i].seconds = Math.round((Date.now() - started) / 100) / 10;
+            ev.steps = ev.steps.filter((x) => x.key !== steps[i].key).concat({ key: steps[i].key, label: steps[i].label, txId: out?.txId, blockHeight: out?.blockHeight, seconds: steps[i].seconds });
+            ctx.next = i + 1;
+          } catch (e) {
+            steps[i].status = 'failed';
+            const message = describeError(e);
+            steps[i].detail = message;
+            ev.error = { step: steps[i].key, message };
+            break;
+          } finally {
+            show();
+            if (target === 'lace') saveEvidence(ev);
+            setEvidence({ ...ev, steps: [...ev.steps] });
+          }
+        }
+        if (ctx.next >= actions.length) ev.finishedAt = new Date().toISOString();
+        if (target === 'lace') saveEvidence(ev);
+        setEvidence({ ...ev, steps: [...ev.steps] });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [lace, secrets, addLog, addHandoff, refresh],
   );
 
   // --------------------------------------------------------------------- bank
@@ -393,6 +568,9 @@ export function useMilestones() {
     busy,
     walletStatus,
     lastAttested,
+    guided,
+    evidence,
+    runGuided,
     deploySimulator,
     connectWallet,
     deployLace,

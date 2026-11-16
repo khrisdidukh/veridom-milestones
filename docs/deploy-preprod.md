@@ -1,62 +1,81 @@
 # Deploying to Midnight Preprod
 
-Status: **not deployed yet.** Everything before the wallet step is done and tested. Deployment needs a
-person: a Lace wallet, a faucet request behind a captcha, and approving transactions.
+Status: **not deployed yet.** Deployment needs a person: a Lace wallet with test tokens, and a click on each
+transaction approval. Everything before that click is built and tested.
 
 What already ran:
 
-- the full flow with real ZK proofs on a local Midnight devnet, through the same midnight-js 4.1.1 calls
-  (`deployContract`, `submitCallTx`, indexer and proof-server providers), with a headless wallet:
-  [`contract/build-evidence/local-devnet-run.log`](../contract/build-evidence/local-devnet-run.log);
-- the Lace provider code in [`ui/src/midnight/lace.ts`](../ui/src/midnight/lace.ts), type-checked against
-  the DApp Connector API 4.0.1 and midnight-js 4.1.1, following the official zk-loan UI.
+- the full flow with real ZK proofs on a local Midnight devnet through midnight-js 4.1.1 with a headless wallet
+  (`contract/e2e/local-devnet.e2e.test.ts`);
+- the web app's wallet path on the same devnet: the real app in Chromium, a stand-in with the shape of the
+  DApp Connector API 4.0.1 in place of the Lace extension, one button, eight proven transactions, state checked
+  on the indexer (`contract/e2e/lace-connector.e2e.test.ts`);
+- both are recorded in [`contract/build-evidence/local-devnet-run.log`](../contract/build-evidence/local-devnet-run.log).
 
-## Steps
+What has not run: the Lace extension itself against this app on Preprod.
 
-1. **Wallet.** Install [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk)
-   in Chrome, create a Midnight wallet, and switch the network to **Preprod**. Keep the recovery phrase
-   offline; it is never needed by this app.
-2. **Proof server.** Lace proves with a local proof server. Start one and point Lace at it
-   (**Settings > Midnight > Local `http://localhost:6300`**):
+## The short way: the hosted app
 
-   ```bash
-   docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3
-   ```
-3. **Test tokens.** Copy the unshielded address (`mn_addr_preprod1...`), open the
-   [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/), paste it, solve the captcha and request
-   tNIGHT (5,000 per request). Back in Lace, select **Generate tDUST** and confirm. Fees are paid in tDUST,
-   which accrues over time once the NIGHT is registered.
-4. **Build.** From the repository root:
+The app at <https://khrisdidukh.github.io/veridom-milestones/> serves the proving keys, so nothing has to be
+built or started locally.
 
-   ```bash
-   npm install
-   npm run compile      # proving keys, needed by the proof server via the app
-   npm run dev          # http://localhost:5173
-   ```
-5. **Deploy.** In the app choose **Lace wallet**, network **Preprod**, **Connect Lace**, and approve the
-   connection. Press **Deploy contract** and approve the transaction. The contract address appears in the
-   header.
-6. **Run the flow.** Bank: register inspector, register project. Builder: accept, prove stage 1, request
-   tranche. Bank: release. Builder: disclose. Each step is a transaction to approve in Lace (about half a
-   minute each with a local proof server).
-7. **Record it.** Add to the README: the contract address, the network (`preprod`), and one or two
-   transaction ids. To reopen later, put the address in `ui/.env.local` as `VITE_CONTRACT_ADDRESS=...` and use
-   **Join** after connecting. The bank role only works in the browser tab that deployed, because the bank
-   secret lives in that tab's memory (by design of this demo).
+1. **Wallet.** Chrome with [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk),
+   Midnight enabled, network **Preprod**.
+2. **Test tokens.** tNIGHT from the [Preprod faucet](https://faucet.preprod.midnight.network/) (captcha) to the
+   wallet's unshielded address. In Lace, **Generate tDUST** and confirm. Fees are paid in tDUST, which accrues
+   over time after that step, so wait until the tDUST balance is above zero.
+3. **Open** <https://khrisdidukh.github.io/veridom-milestones/?lace=preprod>. The link preselects the wallet
+   path and Preprod.
+4. **Connect Lace** and approve the connection. The first line under Transactions says how proofs are made and
+   whether the wallet has tDUST.
+5. **Deploy and run stage 1.** The checklist at the top shows eight transactions. Approve each one in Lace when
+   it asks. Between approvals the app proves; with a proof server that is about half a minute per
+   transaction, in the wallet itself it can take longer. Keep the tab open and in front.
+6. **Download the record.** The JSON file holds the contract address, the eight tx ids and block heights. It
+   holds no secret, amount or evidence hash. Add the address and tx ids to the README.
+
+To stop after the deployment only, use **Deploy contract** instead of step 5 and continue by hand in the role
+panels.
 
 ## If something fails
+
+The failed step turns red and shows the message from the wallet or the node. **Try again from "…"** continues
+from that step with the same contract. The record keeps the error text.
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | "Midnight Lace was not found" | Extension missing or Midnight not enabled | Install Lace, enable Midnight, reload |
-| "Lace is on a different network" | Lace not on Preprod | Switch network in Lace |
-| "Lace has no proof server configured" | Proof server setting empty | Step 2 |
-| Proof server answers 400 / key not found | Proving keys missing | `npm run compile` (full, not `compile:fast`) |
-| Transaction rejected for fees | No tDUST yet | Wait for the tDUST tank to fill (step 3) |
+| "Lace is on a different network" | Lace not on Preprod | Switch network in Lace, reload |
+| Connect line says "no tDUST yet" | tDUST not generated or not accrued | Lace: Generate tDUST, wait, reload |
+| Transaction rejected for fees | Too little tDUST for this transaction | Wait for the tDUST balance to grow, then Try again |
+| "Lace offered no way to make proofs" | No in-wallet prover and no proof server set | Lace: Settings > Midnight > proof server |
+| A step stays on "proving" for minutes | In-wallet proving of a larger circuit | Wait; `discloseToAuditor` is the largest (10 MB proving key) |
+| Page was reloaded mid-run | Private states live in the tab's memory | Start a new run; the old contract stays on chain but cannot be continued |
+
+## Running the app locally instead
+
+```bash
+npm install
+npm run compile      # proving keys, served to the wallet by the dev server
+npm run dev          # http://localhost:5173/?lace=preprod
+```
+
+A local proof server (`docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3`, then Lace: Settings >
+Midnight > Local `http://localhost:6300`) is the fastest way to prove.
+
+To reopen a deployed contract in the same tab session, put the address in `ui/.env.local` as
+`VITE_CONTRACT_ADDRESS=...` and use **Join** after connecting. The bank role only works in the tab that
+deployed, because the bank secret lives in that tab's memory.
+
+## Why not a headless deployment
+
+The local devnet test deploys with a headless wallet. On Preprod that would need a Blockfrost project id
+(Blockfrost has served the Preprod indexer and RPC since October 2026; the old `indexer.preprod.midnight.network`
+answers 410) and a wallet sync of about an hour. The wallet path is also the one a bank or a builder would use.
 
 ## Version check before deploying
 
-The Preprod network runs ledger 8. This repository uses the matrix versions for it (compiler 0.31.1,
-compact-runtime 0.16.0, midnight-js 4.1.1, proof server 8.1.3). Check the
+Preprod runs ledger 8. This repository uses the matrix versions for it (compiler 0.31.1, compact-runtime
+0.16.0, midnight-js 4.1.1, proof server 8.1.3). Check the
 [support matrix](https://docs.midnight.network/relnotes/support-matrix) on the day; do not upgrade to the
 0.34/0.35 toolchains until Preprod moves to ledger 9.

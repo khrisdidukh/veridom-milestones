@@ -17,6 +17,7 @@ import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-j
 import { createProofProvider } from '@midnight-ntwrk/midnight-js-types';
 import type { MidnightProvider, PrivateStateProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
+import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { deployContract, findDeployedContract, submitCallTx } from '@midnight-ntwrk/midnight-js-contracts';
@@ -94,6 +95,10 @@ export type LaceSession = {
   config: Configuration;
   networkId: string;
   shieldedAddress?: string;
+  /** How proofs are made in this session, for the screen and the run record. */
+  proving: string;
+  /** tDUST available for fees, when the wallet reports it. */
+  dust?: bigint;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providers: any;
   privateStates: PrivateStateProvider<string, VeridomPrivateState>;
@@ -118,8 +123,24 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
   const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(assetBase(), fetch.bind(window));
   // Proofs are made the way the user chose in Lace (Settings > Midnight > Proof generator):
   // in the wallet itself (WASM) or by the proof server configured there.
-  const provingProvider = await wallet.getProvingProvider(zkConfigProvider.asKeyMaterialProvider());
-  const proofProvider = createProofProvider(provingProvider as unknown as Parameters<typeof createProofProvider>[0]);
+  // If the wallet offers no prover but names a proof server, talk to that server directly.
+  let proofProvider: ReturnType<typeof createProofProvider>;
+  let proving: string;
+  try {
+    const provingProvider = await wallet.getProvingProvider(zkConfigProvider.asKeyMaterialProvider());
+    proofProvider = createProofProvider(provingProvider as unknown as Parameters<typeof createProofProvider>[0]);
+    proving = config.proverServerUri ? `through Lace, proof server ${config.proverServerUri}` : 'in Lace';
+  } catch (e) {
+    if (!config.proverServerUri) throw new Error(`Lace offered no way to make proofs: ${e instanceof Error ? e.message : String(e)}`);
+    proofProvider = httpClientProofProvider(config.proverServerUri, zkConfigProvider);
+    proving = `proof server ${config.proverServerUri}`;
+  }
+  let dust: bigint | undefined;
+  try {
+    dust = (await wallet.getDustBalance()).balance;
+  } catch {
+    dust = undefined;
+  }
   const publicDataProvider = indexerPublicDataProvider(
     config.indexerUri,
     config.indexerWsUri,
@@ -159,6 +180,8 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
     config,
     networkId,
     shieldedAddress: addresses.shieldedAddress,
+    proving,
+    dust,
     privateStates,
     providers: { privateStateProvider: privateStates, zkConfigProvider, proofProvider, publicDataProvider, walletProvider, midnightProvider },
   };
@@ -178,12 +201,14 @@ export class LaceBackend implements MilestonesBackend {
   readonly where: string;
   readonly contractAddressBytes: Uint8Array;
   private readonly compiled = compiledContract();
+  /** Set when this tab deployed the contract. */
+  deployTx?: CallOutcome;
 
   private constructor(
     private readonly session: LaceSession,
     readonly contractAddress: string,
   ) {
-    this.where = `Lace wallet, network "${session.networkId}", proofs by ${session.config.proverServerUri ?? 'Lace (in-wallet)'}`;
+    this.where = `Lace wallet, network "${session.networkId}", proofs ${session.proving}`;
     this.contractAddressBytes = encodeContractAddress(contractAddress);
   }
 
@@ -196,6 +221,7 @@ export class LaceBackend implements MilestonesBackend {
     });
     const address = deployed.deployTxData.public.contractAddress;
     const backend = new LaceBackend(session, address);
+    backend.deployTx = { txId: String(deployed.deployTxData.public.txId), blockHeight: Number(deployed.deployTxData.public.blockHeight) };
     session.privateStates.setContractAddress(address);
     for (const [party, state] of Object.entries(others)) await backend.setPrivateState(party as Party, state!);
     return backend;

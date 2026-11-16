@@ -118,6 +118,17 @@ await shot('04-final');
 await page.setViewportSize({ width: 390, height: 844 });
 await shot('05-mobile');
 
+step('guided run: one button walks stage 1 through all eight circuits');
+const guided = await browser.newPage({ viewport: { width: 390, height: 844 } });
+guided.on('pageerror', (e) => errors.push(e.message));
+await guided.goto(url);
+await guided.getByRole('button', { name: 'Run stage 1 for me', exact: true }).click();
+await guided.locator('.guided-done').waitFor({ timeout: 30000 });
+if ((await guided.locator('.guided-steps li.g-done').count()) !== 8) errors.push('guided run: expected 8 finished steps');
+if ((await guided.locator('.log li.rejected').count()) !== 0) errors.push('guided run: unexpected rejection');
+if ((await guided.evaluate(() => document.documentElement.scrollWidth)) > 390) errors.push('page scrolls sideways at 390 px');
+await guided.screenshot({ path: path.join(shots, '06-guided-mobile.png'), fullPage: true });
+
 const rejected = await page.locator('.log li.rejected').count();
 const accepted = await page.locator('.log li.ok').count();
 console.log(`accepted ${accepted}, rejected ${rejected} (2 rejections expected)`);

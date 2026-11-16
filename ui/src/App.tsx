@@ -4,7 +4,7 @@
 import { useMilestones } from './useMilestones';
 import { HouseDrawing } from './components/HouseDrawing';
 import { RolePanels } from './components/RolePanels';
-import { Activity, DualLedger, Header, StageTable, statusesOf } from './components/Overview';
+import { Activity, DualLedger, GuidedRun, Header, StageTable, statusesOf } from './components/Overview';
 
 export function App() {
   const m = useMilestones();
@@ -13,6 +13,7 @@ export function App() {
     <>
       <Header m={m} />
       <main>
+        <GuidedRun m={m} />
         <div className="site">
           <section className="plan" aria-label="Construction progress">
             <HouseDrawing stageCount={stageCount} statuses={statusesOf(m)} names={m.stageNames} justProven={m.lastAttested} />
