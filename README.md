@@ -23,15 +23,15 @@ tracks a private home build against the approved plans with a diary, photos and 
 | | |
 | --- | --- |
 | Contract | [`contract/src/veridom-milestones.compact`](contract/src/veridom-milestones.compact), 8 provable circuits, 8 pure circuits |
-| Toolchain | `compact` 0.5.3, compiler **0.31.1**, language 0.23, compact-runtime 0.16.0, midnight-js 4.1.1 (the [support matrix](https://docs.midnight.network/relnotes/support-matrix) for Preview, Preprod and Mainnet) |
+| Toolchain | `compact` 0.5.3, compiler **0.31.1**, language 0.23, compact-runtime 0.16.0, midnight-js 4.1.1: the ledger 8 set. Preprod and Mainnet moved to ledger 9 in November 2026; see [Ledger 9](#ledger-9-and-preprod) |
 | Compile record | [`contract/build-evidence/compile.log`](contract/build-evidence/compile.log) |
 | Live app | **<https://khrisdidukh.github.io/veridom-milestones/>**: press **Run stage 1 for me**. No wallet, no install |
 | Tests | 50 simulator tests (`npm test`); 6 end-to-end tests with real ZK proofs on a local devnet (`npm run test:e2e`), one of which drives the web app through the wallet connector; a browser flow test (`npm run test:ui`) |
 | Devnet run record | [`contract/build-evidence/local-devnet-run.log`](contract/build-evidence/local-devnet-run.log): 17 proven transactions with tx ids and blocks (9 from the headless run, 8 from the web app) |
 | Frontend | React + TypeScript, runs the contract in the browser (simulator) or through the Lace wallet |
-| Preprod | Not deployed yet. One link and two buttons: see [Deploying to Preprod](#deploying-to-preprod) |
+| Preprod | Not deployed. Preprod moved to ledger 9 on 9 Nov 2026 and refuses new ledger 8 contracts; the ledger 9 rebuild comes first. See [Ledger 9 and Preprod](#ledger-9-and-preprod) |
 | Pitch | [slide deck (PDF)](docs/slides/veridom-milestones-deck.pdf) ([HTML source](docs/slides/deck.html)) |
-| Demo video | [docs/video/veridom-milestones-demo.mp4](docs/video/veridom-milestones-demo.mp4) (2 min 30 s, captions, no sound needed) |
+| Demo video | [docs/video/veridom-milestones-demo.mp4](docs/video/veridom-milestones-demo.mp4) (2 min 17 s, captions, no sound needed) |
 | License | [Apache-2.0](LICENSE); third-party attribution in [NOTICE](NOTICE) |
 
 ![The app after two paid stages: elevation drawing, public draw schedule, bank actions](docs/images/ui-two-stages-paid.png)
@@ -74,7 +74,7 @@ the wave, in two rounds.
   uses the wallet's proof server directly if the wallet offers no prover of its own.
 - **Live app** on GitHub Pages with the proving keys next to it, a demo video and an updated deck.
 
-Next: the Preprod run (see [the stop-point below](#deploying-to-preprod)), and connecting the evidence bundle
+Next: the rebuild for ledger 9 and the Preprod run (see [Ledger 9 and Preprod](#ledger-9-and-preprod)), and connecting the evidence bundle
 to the Veridom diary so a stage's photos and inspection report feed the proof directly. The full list is in
 [Roadmap](#roadmap).
 
@@ -294,37 +294,43 @@ the inspector and the auditor compute exactly what the contract computes.
   keeps its own private state.
 - In wallet mode the private states live in the tab's memory. Reloading the page loses the bank's and the
   builder's secrets, so a contract deployed from a tab can only be continued from that tab.
-- Not deployed on a public network yet (see below). All on-chain evidence so far is from a local devnet.
+- Not deployed on a public network yet (see below). All on-chain evidence so far is from a local ledger 8 devnet.
 
 ---
 
-## Deploying to Preprod
+## Ledger 9 and Preprod
 
-**Status: not deployed yet.** We say so plainly because the last step needs a person: a Lace wallet with test
-tokens and a click on each approval. Everything up to that click is built and tested:
+**Status: not deployed on Preprod.** Midnight moved Mainnet to ledger 9 on 6 November 2026 and Preprod on
+9 November 2026 ([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)). After the upgrade a
+network cannot decode ledger 8 transactions, and a new contract has to be compiled with Compact 0.36.0. This
+build was made with Compact 0.31.1 for ledger 8, so Preprod will refuse its deploy. We say so in the app too.
 
-- the same midnight-js calls (`deployContract`, `submitCallTx`, indexer and proof providers) run on the local
-  devnet with a headless wallet;
-- the app's wallet path in [`ui/src/midnight/lace.ts`](ui/src/midnight/lace.ts) runs on the local devnet
-  through a stand-in with the connector's shape (`lace-connector.e2e.test.ts`).
+What is built and tested, on a local ledger 8 devnet:
 
-What that does not cover is the Lace extension itself and the Preprod network.
+- the same midnight-js calls (`deployContract`, `submitCallTx`, indexer and proof providers) with a headless
+  wallet (`local-devnet.e2e.test.ts`);
+- the app's wallet path in [`ui/src/midnight/lace.ts`](ui/src/midnight/lace.ts) through a stand-in with the
+  DApp Connector's shape (`lace-connector.e2e.test.ts`): the real app in Chromium, eight proven transactions.
 
-The run itself is short, because the live app already serves the proving keys:
+The rebuild for ledger 9 means: Compact 0.36.0 (language 0.28, ZKIR v3), compact-runtime 0.21.0,
+Midnight.js 5.0.0 (`providers.config` instead of `setNetworkId`), the `@midnightntwrk` DApp Connector API
+4.1.0, and a ledger 9 devnet (node 2.1.101, indexer 4.4.101, proof server 9.0.0) for the end-to-end tests.
+
+After that, the Preprod run stays one link and one button, because the live app serves the proving keys:
 
 1. In Chrome with [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on
-   **Preprod**, funded with tNIGHT from the [faucet](https://faucet.preprod.midnight.network/) and with tDUST
-   generated, open <https://khrisdidukh.github.io/veridom-milestones/?lace=preprod>.
+   **Preprod**, with tNIGHT from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/)
+   registered for tDUST (**Generate tDUST** in Lace; the upgrade cleared earlier registrations), open
+   <https://khrisdidukh.github.io/veridom-milestones/?lace=preprod>.
 2. Press **Connect Lace** and approve the connection. The log line says whether the wallet has tDUST.
 3. Press **Deploy and run stage 1**. Approve each of the eight transactions in Lace as it comes up.
 4. Press **Download the record**. The file holds the contract address, tx ids and block heights.
 
 If a step fails, the checklist shows the wallet's or the node's message and a button to continue from that
-step. Full detail and a table of known failure causes: [docs/deploy-preprod.md](docs/deploy-preprod.md).
+step. More detail: [docs/deploy-preprod.md](docs/deploy-preprod.md).
 
-Running a headless deployment from CI instead would need a Blockfrost project id, since Blockfrost has served
-the Preprod indexer since October 2026; we chose the wallet path because that is how a bank or a builder would
-use it.
+A headless deployment from CI would need a Blockfrost project token, since Blockfrost serves the Preprod
+indexer and RPC; we chose the wallet path because that is how a bank or a builder would use it.
 
 ---
 
@@ -332,10 +338,10 @@ use it.
 
 | When | What |
 | --- | --- |
-| Now | Preprod run through Lace, contract address and tx ids in this README |
+| Now | Rebuild for ledger 9 (Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.0, proof server 9.0.0), then the Preprod run through Lace, with contract address and tx ids in this README |
 | Next 4 weeks | Evidence bundles straight from the Veridom diary (photos, inspection report, invoices of a stage); private state persisted and encrypted in the browser, so the roles survive a reload; each role in its own session instead of one tab |
 | Next 3 months | Inspector signing app with hardware-held keys; several inspectors per stage (k of n); stage-gated grants as a second use of the same contract |
-| After that | Pilot on the founder's own build, then with a lender; standard-library Schnorr once ledger 9 reaches Preprod and Mainnet |
+| After that | Pilot on the founder's own build, then with a lender; replace the Schnorr polyfill with a native verifier when the standard library ships one |
 
 ---
 
@@ -352,9 +358,10 @@ use it.
 | `@midnight-ntwrk/ledger-v8` / `onchain-runtime-v3` | 8.1.2 / 3.1.1 | overrides as in the official examples |
 | Node / proof server / indexer | 1.0.400 / 8.1.3 / 4.3.5 | devnet images |
 
-These are the versions the [support matrix](https://docs.midnight.network/relnotes/support-matrix) lists for
-Preview, Preprod and Mainnet (updated 2 Nov 2026). Newer toolchains (0.34, 0.35) target ledger 9 and do not
-deploy to those networks yet.
+These were the versions the [support matrix](https://docs.midnight.network/relnotes/support-matrix) listed for
+Preview, Preprod and Mainnet when the contract was built (2 Nov 2026). The networks have since moved to ledger 9
+(matrix of 13 Nov 2026: node 2.1.101, Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.0, proof server
+9.0.0, indexer 4.4.101); see below.
 
 ---
 

@@ -1033,3 +1033,9 @@ footer {
     stroke-dasharray: none;
   }
 }
+
+.ledger-note {
+  flex-basis: 100%;
+  max-width: 46rem;
+  margin: 0.25rem 0 0;
+}

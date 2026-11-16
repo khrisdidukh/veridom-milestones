@@ -1,6 +1,6 @@
 # Demo video
 
-[`docs/video/veridom-milestones-demo.mp4`](video/veridom-milestones-demo.mp4), about 2 min 30 s, captions drawn
+[`docs/video/veridom-milestones-demo.mp4`](video/veridom-milestones-demo.mp4), about 2 min 17 s, captions drawn
 into the picture, no sound.
 
 The video is generated, not screen-captured by hand, so it can be rebuilt after any change:
@@ -13,7 +13,7 @@ node docs/video/record-demo.mjs /tmp/parts    # slides + app, with captions (Pla
 npm run compile && npm run devnet:up          # the part with real proofs
 RECORD_VIDEO_DIR=/tmp/devnet npm run test:e2e -w contract -- e2e/lace-connector
 
-docs/video/build-video.sh /tmp/parts /tmp/devnet/<file>.webm /tmp/out   # ffmpeg
+DEVNET_SKIP=11 docs/video/build-video.sh /tmp/parts /tmp/devnet/<file>.webm /tmp/out   # ffmpeg
 ```
 
 ## Shot list
@@ -26,7 +26,7 @@ docs/video/build-video.sh /tmp/parts /tmp/devnet/<file>.webm /tmp/out   # ffmpeg
 | Stage 2 by hand | Builder, inspector, builder | Evidence hashed in the browser, inspector signs the hash, builder proves the signature on chain |
 | The money | Tranche over the cap, then a valid one, bank release | Over the cap the circuit refuses; a valid amount passes without being published; the bank checks it against the commitment |
 | Disclosure | Auditor panel | One fact with consent on chain; without consent the contract refuses |
-| Real proofs | The same app on a local Midnight devnet through the wallet connector, sped up | Eight proven transactions with tx ids and blocks |
+| Real proofs | The same app on a local Midnight devnet (ledger 8) through the wallet connector, sped up | Eight proven transactions with tx ids and blocks |
 | Close | Deck slides 6, 9, 10 | Tests, next steps, closing line |
 
 What the video does not show: a public network. The devnet part uses a stand-in for the Lace extension backed

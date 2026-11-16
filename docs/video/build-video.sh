@@ -17,7 +17,7 @@ ffmpeg -y -loglevel error -ss 0.6 -i "$parts/c-close.webm" -vf "scale=1920:1080"
 # Devnet part: the whole proven run, sped up to about 24 seconds.
 dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$devnet")
 factor=$(python3 -c "print(max(1.0, ($dur - ${DEVNET_SKIP:-0}) / 24))")
-ffmpeg -y -loglevel error -ss "${DEVNET_SKIP:-0}" -i "$devnet" -vf "setpts=PTS/$factor,scale=1920:1080" "${enc[@]}" -crf 20 "$parts/b.mp4"
+ffmpeg -y -loglevel error -ss "${DEVNET_SKIP:-0}" -i "$devnet" -vf "setpts=PTS/$factor,scale=1920:1080,tpad=stop_mode=clone:stop_duration=3" "${enc[@]}" -crf 20 "$parts/b.mp4"
 
 printf "file '%s'\n" "$parts/a.mp4" "$parts/b.mp4" "$parts/c.mp4" > "$parts/list.txt"
 ffmpeg -y -loglevel error -f concat -safe 0 -i "$parts/list.txt" -c copy -movflags +faststart "$out/veridom-milestones-demo-1080p.mp4"

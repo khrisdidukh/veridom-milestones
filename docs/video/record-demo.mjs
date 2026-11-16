@@ -11,14 +11,16 @@
 //   node docs/video/record-demo.mjs <out-dir>
 
 import { chromium } from 'playwright';
-import { mkdirSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(process.argv[2] ?? path.join(here, 'parts'));
 const app = process.env.UI_URL ?? 'http://localhost:5173/';
-const slide = (n) => pathToFileURL(path.join(here, '../slides/png', `slide-${String(n).padStart(2, '0')}.png`)).href;
+// Inlined as data URLs: a page set from about:blank may not load file:// images.
+const slide = (n) =>
+  `data:image/png;base64,${readFileSync(path.join(here, '../slides/png', `slide-${String(n).padStart(2, '0')}.png`)).toString('base64')}`;
 const size = { width: 1920, height: 1080 };
 mkdirSync(out, { recursive: true });
 
@@ -142,7 +144,7 @@ await record('c-close', async ({ page, cap, showSlide }) => {
   await showSlide(6);
   await cap('50 contract tests, 6 end-to-end tests with real proofs, and a browser test of the whole flow.', 6);
   await showSlide(9);
-  await cap('Next: the Preprod run through Lace, evidence straight from the Veridom diary, and a signing app for inspectors.', 6);
+  await cap('Next: a rebuild for ledger 9 and the Preprod run through Lace, evidence straight from the Veridom diary, and a signing app for inspectors.', 7);
   await showSlide(10);
   await cap('Veridom Milestones. The bank sees the facts. The builder keeps the files.', 5);
 });

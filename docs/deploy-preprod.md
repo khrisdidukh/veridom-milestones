@@ -1,7 +1,10 @@
 # Deploying to Midnight Preprod
 
-Status: **not deployed yet.** Deployment needs a person: a Lace wallet with test tokens, and a click on each
-transaction approval. Everything before that click is built and tested.
+Status: **not deployed.** Preprod moved to ledger 9 on 9 November 2026
+([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)). A ledger 9 network does not decode
+ledger 8 transactions, and new contracts must be compiled with Compact 0.36.0. This build uses Compact 0.31.1
+and midnight-js 4.1.1 (ledger 8), so the steps below work only after the rebuild for ledger 9 described at
+the end of this page. Until then the app shows a note on the wallet path for Preprod and Preview.
 
 What already ran:
 
@@ -12,17 +15,19 @@ What already ran:
   on the indexer (`contract/e2e/lace-connector.e2e.test.ts`);
 - both are recorded in [`contract/build-evidence/local-devnet-run.log`](../contract/build-evidence/local-devnet-run.log).
 
-What has not run: the Lace extension itself against this app on Preprod.
+What has not run: the Lace extension itself, and any public network.
 
-## The short way: the hosted app
+## The short way: the hosted app (after the ledger 9 rebuild)
 
 The app at <https://khrisdidukh.github.io/veridom-milestones/> serves the proving keys, so nothing has to be
 built or started locally.
 
 1. **Wallet.** Chrome with [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk),
    Midnight enabled, network **Preprod**.
-2. **Test tokens.** tNIGHT from the [Preprod faucet](https://faucet.preprod.midnight.network/) (captcha) to the
-   wallet's unshielded address. In Lace, **Generate tDUST** and confirm. Fees are paid in tDUST, which accrues
+2. **Test tokens.** tNIGHT from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/) (captcha) to
+   the wallet's unshielded address (`mn_addr_preprod1…`). In Lace, **Generate tDUST** and confirm. The ledger 9
+   upgrade cleared Preprod DUST registrations that were not backed by cNIGHT, so do this again even if it was
+   done before 9 November. Fees are paid in tDUST, which accrues
    over time after that step, so wait until the tDUST balance is above zero.
 3. **Open** <https://khrisdidukh.github.io/veridom-milestones/?lace=preprod>. The link preselects the wallet
    path and Preprod.
@@ -60,7 +65,7 @@ npm run compile      # proving keys, served to the wallet by the dev server
 npm run dev          # http://localhost:5173/?lace=preprod
 ```
 
-A local proof server (`docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3`, then Lace: Settings >
+A local proof server (`docker run -p 6300:6300 midnightntwrk/proof-server:<matrix version>`, then Lace: Settings >
 Midnight > Local `http://localhost:6300`) is the fastest way to prove.
 
 To reopen a deployed contract in the same tab session, put the address in `ui/.env.local` as
@@ -75,7 +80,10 @@ answers 410) and a wallet sync of about an hour. The wallet path is also the one
 
 ## Version check before deploying
 
-Preprod runs ledger 8. This repository uses the matrix versions for it (compiler 0.31.1, compact-runtime
-0.16.0, midnight-js 4.1.1, proof server 8.1.3). Check the
-[support matrix](https://docs.midnight.network/relnotes/support-matrix) on the day; do not upgrade to the
-0.34/0.35 toolchains until Preprod moves to ledger 9.
+Preprod, Preview and Mainnet run ledger 9.1.0.1 on node 2.1.101 (support matrix of 13 November 2026). The
+ledger 9 set is Compact 0.36.0 (language 0.28.0), compact-runtime 0.21.0, Midnight.js 5.0.0, Compact.js 3.0.0,
+on-chain runtime v4, wallet SDK 2.0.0, DApp Connector API 4.1.0 (now under `@midnightntwrk`), proof server
+9.0.0 and indexer 4.4.101. This repository is still on the ledger 8 set (compiler 0.31.1, compact-runtime
+0.16.0, midnight-js 4.1.1, proof server 8.1.3). Contracts compiled with 0.31.1 that were deployed before the
+upgrade keep working, but a new one cannot be deployed from ledger 8 artifacts, so the rebuild comes first.
+Check the [support matrix](https://docs.midnight.network/relnotes/support-matrix) on the day.

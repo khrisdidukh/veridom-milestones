@@ -18,12 +18,12 @@
 2026-11-16T16:51:56.652Z  discloseToAuditor  as builder tx 0024f217ab0509e3507886b7ee0bd51c99cdbe8b96f5932a3d9300053df73aa236  block 80  95.5 s
 2026-11-16T16:51:57.034Z  auditor verified   7 checks passed against indexer state
 # Web app through the wallet connector (stand-in wallet backed by the devnet genesis wallet), guided run:
-# contract e8ea45aaf666d3a597be0339211f79f0db47a9cb4e7c427dbd0d449e6c9bcd87
-2026-11-16T17:02:49.974Z  ui:deploy             tx 00aaa6f7121466b332a58d09f97958e7600ec599a58d4db5e05b7447df0b951038  block 96  34.8 s
-2026-11-16T17:02:49.974Z  ui:registerInspector  tx 0057e454d83b3b6f7a01c67faa51e2111d6e6f1b5299ce0f08833bb81f508d3248  block 104  48.7 s
-2026-11-16T17:02:49.974Z  ui:registerProject    tx 0003dda3d13393cd403cd2dec54f2cc937d1b93c409c8ac6daaccfe8647769fdb9  block 113  53.6 s
-2026-11-16T17:02:49.974Z  ui:acceptProject      tx 00b07d7f13861f16a9ba5d4ebd3c7beeb1e0bc324f0bf47fbf3f4d8bc8bfd6ac93  block 125  73.5 s
-2026-11-16T17:02:49.974Z  ui:attestMilestone    tx 00816ef532e8c7eb022c5cc7e6c1798a6336fe77ef86086aeef683219f367692ae  block 140  88.5 s
-2026-11-16T17:02:49.974Z  ui:requestTranche     tx 009146bba6dc3306c04d3c47a51ae61fc038bf79a31147901c71663744a5f93e23  block 153  78.6 s
-2026-11-16T17:02:49.974Z  ui:releaseTranche     tx 009802a0be21330bbc78de2b6baf7a590fc6ee727e8784f27e16cbde1e2fbdad54  block 164  67.3 s
-2026-11-16T17:02:49.974Z  ui:discloseToAuditor  tx 008e95c370402545357ec4d1dcc1aac9a0040964f2b80820fb0691e00117de22a3  block 188  144.1 s
+# contract 1832b388d125a32411a00b1938c33e3b4f94adb6d072b51b8a50f227eb14ad5b
+2026-11-16T18:49:15.680Z  ui:deploy             tx 0045b2930347e7fefa06e73fa1ba7b06abd168b39525dac135d88e8f07101e0821  block 11  26.2 s
+2026-11-16T18:49:15.680Z  ui:registerInspector  tx 00c76bfdb56f50a200125de07c6c4ff7a3b5a6f089738f5511b8b631f8a6acbcc0  block 16  30.3 s
+2026-11-16T18:49:15.680Z  ui:registerProject    tx 00e7b38b7e88c6138fbb5edf97b80c61f5922ab25af551627055ea6fccddabe409  block 22  36 s
+2026-11-16T18:49:15.680Z  ui:acceptProject      tx 00b000e8ad610fb8b7aa82a7cb36eac4da31a520f8584e59fd5975259d878cb3ba  block 29  41.8 s
+2026-11-16T18:49:15.680Z  ui:attestMilestone    tx 00ba70e216f6b2228cca794bb94dc3ae8189caa2927c8e7401231a7865526a133a  block 35  36.3 s
+2026-11-16T18:49:15.680Z  ui:requestTranche     tx 008ceb48b2f97b86333df5f23cccba2c44bbe946fd0947c4079488149beafde1f3  block 41  36.4 s
+2026-11-16T18:49:15.680Z  ui:releaseTranche     tx 00baa654ba9de64718b5366dfd98467222ad7a458e21adff47d615c034b293274a  block 46  29.4 s
+2026-11-16T18:49:15.680Z  ui:discloseToAuditor  tx 00c77586be90b28ed4b6b0188d334f68fe44e04f86244249f0565bc8f656cacac6  block 55  54.3 s

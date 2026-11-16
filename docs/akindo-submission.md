@@ -54,7 +54,8 @@ Veridom Milestones proves those three facts on Midnight and leaves the documents
   in a browser, through the DApp Connector API.
 - A four-role web app (bank, builder, inspector, auditor) that shows the public ledger next to the builder's
   private state. It is live, and one button runs a whole stage in the browser with no wallet and no install.
-- Preprod: not deployed at the time of writing; the run is one link and one button (see the README).
+- Preprod: not deployed. Midnight moved Preprod to ledger 9 on 9 November, which refuses new contracts built
+  with the ledger 8 toolchain used here (Compact 0.31.1). The rebuild for ledger 9 is the next step.
 
 It is a new module of Veridom (veridom.space), a house-building control app for private homebuilders that
 tracks a build against the approved plans with a diary, photos and inspections. The evidence a stage proof
@@ -98,14 +99,16 @@ Not applicable: this is our first submission to the Buildathon.
 
 ## Next milestones
 
-1. Now: Preprod run through Lace from the hosted app; contract address and transaction ids in the README.
+1. Now: rebuild for ledger 9 (Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.0), rerun the devnet
+   tests on a ledger 9 devnet, then the Preprod run through Lace from the hosted app, with the contract address
+   and transaction ids in the README.
 2. Next 4 weeks: evidence bundles straight from the Veridom diary (a stage's photos, inspection report and
    invoices feed the proof); private state encrypted and persisted in the browser so roles survive a reload;
    one session per role instead of four roles in one tab.
 3. Next 3 months: inspector signing app with hardware-held keys; several inspectors per stage (k of n);
    stage-gated grants as a second use of the same contract.
-4. After that: pilot on the founder's own build, then with a lender; move to the standard-library Schnorr
-   verifier once ledger 9 reaches Preprod and Mainnet.
+4. After that: pilot on the founder's own build, then with a lender; replace the Schnorr polyfill with a
+   native verifier when the standard library ships one.
 
 ## How to test (for judges)
 
@@ -124,4 +127,4 @@ Details in the README.
 - [x] Slide deck: `docs/slides/veridom-milestones-deck.pdf`
 - [x] Demo video: `docs/video/veridom-milestones-demo.mp4`
 - [x] Description of the progress during the wave
-- [ ] Preprod run (optional): `docs/deploy-preprod.md`
+- [ ] Preprod run (optional, after the ledger 9 rebuild): `docs/deploy-preprod.md`

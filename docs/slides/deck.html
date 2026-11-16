@@ -227,7 +227,7 @@ assert(newTotal &lt;= terms.limit,
   "Cumulative draw would exceed
    the approved loan limit");</pre>
   </div>
-  <p class="muted" style="max-width:62ch;margin-top:24px;font-size:20px">Compact 0.31.1, 8 provable circuits. Inspector signatures are verified inside the proof, caller identity comes from witness secrets, and write-back witnesses keep the private running total.</p>
+  <p class="muted" style="max-width:62ch;margin-top:24px;font-size:20px">Compact 0.31.1 (ledger 8), 8 provable circuits. Inspector signatures are verified inside the proof, caller identity comes from witness secrets, and write-back witnesses keep the private running total.</p>
 </section>
 
 <!-- 6 -->
@@ -289,7 +289,7 @@ assert(newTotal &lt;= terms.limit,
     <div>
       <h3>Next</h3>
       <ul>
-        <li>Preprod run through Lace: one link, one button</li>
+        <li>Rebuild for ledger 9 (Compact 0.36.0, Midnight.js 5), then the Preprod run through Lace: one link, one button</li>
         <li>Evidence bundles straight from the Veridom diary</li>
         <li>Encrypted private state, one session per role</li>
         <li>Inspector signing app with hardware-held keys</li>
@@ -300,7 +300,7 @@ assert(newTotal &lt;= terms.limit,
       <ul>
         <li>Pilot on the founder's own build</li>
         <li>Pilot with a lender from current talks</li>
-        <li>Standard-library Schnorr once ledger 9 is live</li>
+        <li>Replace the Schnorr polyfill with a native verifier when one ships</li>
       </ul>
     </div>
   </div>
