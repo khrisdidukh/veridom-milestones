@@ -36,7 +36,7 @@ export function App() {
       <footer>
         <p>
           A module of <a href="https://veridom.space">Veridom</a>, the house-building control app. Contract compiled with
-          Compact 0.31.1; Apache-2.0.
+          Compact 0.36.0 for ledger 9; Apache-2.0.
         </p>
       </footer>
     </>
