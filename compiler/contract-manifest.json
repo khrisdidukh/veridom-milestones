@@ -1,0 +1,199 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.36.0",
+  "compiler-commit": "b5d9e4dfc532fe47011c4f6296e254f4853eb469",
+  "language-version": "0.28.0",
+  "runtime-version": "0.21.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 20495,
+      "hash": "ad1c2784fbd8269b3c1674e0c5cfb96ff9143efae09cf1e353f4a7541c21cece"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 12851,
+      "hash": "553774024e9eb77e472bcda2acdab6d5772347c53c269de7786189955bb6ad02"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 208098,
+      "hash": "66143bb74853750b33bd3bd7638e3b1c3f38e12a8f9636524fdcceca7d24305b"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 11158,
+      "hash": "bdacb42055a3de2f8090dd1bdebf1f019a4db2a2467fa6b80210ddeead4d0e0c"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "acceptProject.bzkir": {
+      "type": "file",
+      "size": 2168,
+      "hash": "d2be59e0a62eae1c2822df5a5178ed57c1f519545de403bf88b12bad4e79ccae"
+    },
+    "acceptProject.zkir": {
+      "type": "file",
+      "size": 7716,
+      "hash": "94e734ab5fced5c088e0dbb5f9f373752889fb4e46ba5817c73e028b56cf89bb"
+    },
+    "attestMilestone.bzkir": {
+      "type": "file",
+      "size": 3622,
+      "hash": "09afe43b85b09c65382dff635696d2524a95fcd4dd8e647f437e3abce1625d91"
+    },
+    "attestMilestone.zkir": {
+      "type": "file",
+      "size": 12182,
+      "hash": "c0b7159bb4cd0cf5adb80ab7c5ea04d94f52d957223028332862510394c0805c"
+    },
+    "discloseToAuditor.bzkir": {
+      "type": "file",
+      "size": 3447,
+      "hash": "90076a4e683f28ad240688f76b05b7878dacd3790fe4410032d2ed67c4f0cf42"
+    },
+    "discloseToAuditor.zkir": {
+      "type": "file",
+      "size": 12568,
+      "hash": "608928591f36ed14d672c2335524974bcdaf0a20c26e2eb7c49a83ec1b37288b"
+    },
+    "registerInspector.bzkir": {
+      "type": "file",
+      "size": 710,
+      "hash": "5202ff9871e09fd75edc31ba7136eee54305ebc2b6d062f2b3c7721f50ad815c"
+    },
+    "registerInspector.zkir": {
+      "type": "file",
+      "size": 2205,
+      "hash": "de4fc2add9c11cc10cd580fa339719fab86816fbff6c6960a7b873ef8b923cc4"
+    },
+    "registerProject.bzkir": {
+      "type": "file",
+      "size": 1274,
+      "hash": "804a76d03bbcf50cb293822d327bfcaeae2ffbf15887da2c9028a3e3d0b4c58d"
+    },
+    "registerProject.zkir": {
+      "type": "file",
+      "size": 4388,
+      "hash": "12611551b33f453de5af3e4f56a4b234779eab06848a6a18fea4452e032fbbb1"
+    },
+    "releaseTranche.bzkir": {
+      "type": "file",
+      "size": 1970,
+      "hash": "5ec5acecfc27de0e888562d319d258df253c1567af46e6a6ca2a93ecd91c5d4a"
+    },
+    "releaseTranche.zkir": {
+      "type": "file",
+      "size": 6786,
+      "hash": "313bc16eac19f72652032e7c13aa08df59fe4c537b8317f66d9463cf464b2417"
+    },
+    "requestTranche.bzkir": {
+      "type": "file",
+      "size": 4339,
+      "hash": "d8164426ad3d24b16759bc19dbb518b9b5be6c88240286d743d19e5fdcd78136"
+    },
+    "requestTranche.zkir": {
+      "type": "file",
+      "size": 14047,
+      "hash": "16b933a0e807da830daf26859df386e80bf6d77b8fadeb8dcf5b42944c7374c1"
+    },
+    "revokeInspector.bzkir": {
+      "type": "file",
+      "size": 638,
+      "hash": "d58c142f0da6fdf49336506c5b6cea09097a1d444faadb1aa73896a555582548"
+    },
+    "revokeInspector.zkir": {
+      "type": "file",
+      "size": 2475,
+      "hash": "a734d1e869a8bb91658b4d4b6653c8267b35b3d6d831ab1aa4ca4fda3228cd6f"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "acceptProject.prover": {
+      "type": "file",
+      "size": 22550920,
+      "hash": "5de23d73a7e93328d8bb582ab552358a7636cc14f92bbc1ae32c5ac3f2309c67"
+    },
+    "acceptProject.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "51539bdea81dd651b00719e6e9c5c20356b6bccef05827a97b56e7596db9cd30"
+    },
+    "attestMilestone.prover": {
+      "type": "file",
+      "size": 24649926,
+      "hash": "a93f70fabe27c2e5fdcdc69227b85746805cf1c479bc6b622dc1b8998d4c0bf9"
+    },
+    "attestMilestone.verifier": {
+      "type": "file",
+      "size": 2313,
+      "hash": "03493399e2092acdd0669ea3000a197f8c667e80476e143d37ee38435452a7bb"
+    },
+    "discloseToAuditor.prover": {
+      "type": "file",
+      "size": 49291287,
+      "hash": "bc9066f4e5ec2d1ee18eccdf428be121111c9e1ed3ebb2c4f09681e5a60e0b18"
+    },
+    "discloseToAuditor.verifier": {
+      "type": "file",
+      "size": 2313,
+      "hash": "b76d7b3434d86e9e88b917948d24714d197f495d643b6e5dcf418ff51b598f90"
+    },
+    "registerInspector.prover": {
+      "type": "file",
+      "size": 12326246,
+      "hash": "25e290707af2ab746fc5846dc8c658fcaba5020595587668a66a4b535845859e"
+    },
+    "registerInspector.verifier": {
+      "type": "file",
+      "size": 2313,
+      "hash": "21755c98384abf238448b54df3d0dba02b532dee5aa36c56988429d5f84296ee"
+    },
+    "registerProject.prover": {
+      "type": "file",
+      "size": 11277834,
+      "hash": "52e5e7c6011b3b952e196fe173cb59b12f8835bcb2633278d76ac4764ea650b9"
+    },
+    "registerProject.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "10e1d121c9707dd29a694d4a7420598c95fbc4d745f9f7df14afecd243d2646a"
+    },
+    "releaseTranche.prover": {
+      "type": "file",
+      "size": 11278530,
+      "hash": "e0d6fae6838f2ad42ccdacc09f1cbfc15730cfb642e123c5802e080b8ec8cec8"
+    },
+    "releaseTranche.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "346f054c3d6c4f6c5180c503e3f9a9896200d8d8c4b1c3c5c63fac8e866892db"
+    },
+    "requestTranche.prover": {
+      "type": "file",
+      "size": 22553091,
+      "hash": "4d71385bc7e7971ec7749ae43de4bf838a848938f9f2d8ff49a1b2e504268391"
+    },
+    "requestTranche.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "f9686c8655d3aa0b3c9dc28cacbf86e9bead67c74d5274d31f66a1a13b5aaa0c"
+    },
+    "revokeInspector.prover": {
+      "type": "file",
+      "size": 11277198,
+      "hash": "2127b4f90a53483ce8918af7dcf8272c7c5611d513d6863040addc127cbd56d6"
+    },
+    "revokeInspector.verifier": {
+      "type": "file",
+      "size": 2121,
+      "hash": "83b94ff99fb0c52f919bfc2f612c029a3cdcbb20794ed6d87b9b0f68d9d45317"
+    }
+  }
+}

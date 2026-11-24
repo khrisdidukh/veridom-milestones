@@ -1,7 +1,8 @@
 {
-  "compiler-version": "0.31.1",
-  "language-version": "0.23.0",
-  "runtime-version": "0.16.0",
+  "compiler-version": "0.36.0",
+  "compiler-commit": "b5d9e4dfc532fe47011c4f6296e254f4853eb469",
+  "language-version": "0.28.0",
+  "runtime-version": "0.21.0",
   "circuits": [
     {
       "name": "lenderKey",
@@ -302,12 +303,7 @@
         {
           "name": "inspectorPk",
           "type": {
-            "type-name": "Alias",
-            "name": "JubjubPoint",
-            "type": {
-              "type-name": "Opaque",
-              "tsType": "JubjubPoint"
-            }
+            "type-name": "JubjubPoint"
           }
         }
       ],
@@ -682,12 +678,7 @@
                 {
                   "name": "announcement",
                   "type": {
-                    "type-name": "Alias",
-                    "name": "JubjubPoint",
-                    "type": {
-                      "type-name": "Opaque",
-                      "tsType": "JubjubPoint"
-                    }
+                    "type-name": "JubjubPoint"
                   }
                 },
                 {
@@ -843,12 +834,7 @@
         "maxval": 65535
       },
       "value": {
-        "type-name": "Alias",
-        "name": "JubjubPoint",
-        "type": {
-          "type-name": "Opaque",
-          "tsType": "JubjubPoint"
-        }
+        "type-name": "JubjubPoint"
       }
     },
     {
