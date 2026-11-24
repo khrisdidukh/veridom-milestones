@@ -1,11 +1,11 @@
 # Veridom Milestones: compiler build record
-date:              2026-11-04T11:54:23.193Z
+date:              2026-11-24T09:54:25.514Z
 compact CLI:       compact 0.5.3
-compiler:          0.31.1
-language version:  0.23.0
-runtime required:  0.16.0
+compiler:          0.36.0 (b5d9e4dfc 2026-11-03)
+language version:  0.28.0
+runtime required:  0.21.0
 mode:              full (zkir + proving/verifier keys)
-duration:          43.0 s
+duration:          24.7 s
 
 $ compact compile src/veridom-milestones.compact src/managed/veridom-milestones
 Compiling 8 circuits:
@@ -29,39 +29,40 @@ Compiling 8 circuits:
 - discloseToAuditor [proof]
 
 ## Artifacts (sha256)
-9c013eed0ed09eea59784f484424610d4a66a3addaac8e34ec0864ce39465df4  src/managed/veridom-milestones/compiler/contract-info.json  (20873 bytes)
-db597f9e34e841c32255a114cdbc9c6ba48ac1627a97fce59a58397ec2c15752  src/managed/veridom-milestones/contract/index.d.ts  (12469 bytes)
-15f329c760e8649acea882f7d769fe82bd5d5ee5f8fe185d53e0ed25e9076867  src/managed/veridom-milestones/contract/index.js  (199195 bytes)
-a08bcbb5e295f37d5acf891f08dfe54c8dc751416bf8f506f37274180e3bfb76  src/managed/veridom-milestones/contract/index.js.map  (11053 bytes)
-a961a3e1951a2acc48907a2212951fa788acdc549f2357c5ea0440b6c12b4eac  src/managed/veridom-milestones/keys/acceptProject.prover  (5218850 bytes)
-5bd171593979df55e9dd34fc0e1948f900dc3874cfbe74158e2427cb18f2dd25  src/managed/veridom-milestones/keys/acceptProject.verifier  (2119 bytes)
-b7a0da4969fa23eaba71a764e558cf87b2773630b5b8f6dec41be33db9e350ce  src/managed/veridom-milestones/keys/attestMilestone.prover  (5749192 bytes)
-ddfa7519443528c3c183f4b4eef21b23a46ca1e8731f4db1d3e799fa95843cf1  src/managed/veridom-milestones/keys/attestMilestone.verifier  (2311 bytes)
-cc4e52ddb259323433d4cfde5466f24cda6c4bea49423bb492b6f87ec0b52126  src/managed/veridom-milestones/keys/discloseToAuditor.prover  (9984623 bytes)
-9316126a134de64a22d5ac9169d63316146ceceeba4040539c3eada337effc84  src/managed/veridom-milestones/keys/discloseToAuditor.verifier  (2119 bytes)
-e046be180aaf972f0b2eb567299709cf381fb296093b1860235e7e0d9b6e789a  src/managed/veridom-milestones/keys/registerInspector.prover  (2820290 bytes)
-7d48bfdb5ff7edc853a47490d912a9143ab33613f91e345787c33114f2bd637b  src/managed/veridom-milestones/keys/registerInspector.verifier  (2119 bytes)
-c08b91cf97e18b14f472aa40ac157e778874b3aaf3d2cfb7cc706df5f5d75d93  src/managed/veridom-milestones/keys/registerProject.prover  (2821155 bytes)
-6e949f59dc76053a531cbc01cc0372e1aebaf657b9b6021372d4e415cfc42c2a  src/managed/veridom-milestones/keys/registerProject.verifier  (2119 bytes)
-8e4fe57c574cd926eb184f1cfb5843c6b9cb2572eecb5eef7b52981fa6fee24c  src/managed/veridom-milestones/keys/releaseTranche.prover  (2820803 bytes)
-7f7a9167e838114eb6dcbf006946617ceaab78f0d1290e39082715b7523642a0  src/managed/veridom-milestones/keys/releaseTranche.verifier  (2119 bytes)
-13a63eba333513e3e45e6343004707fb8505ed0bd506855bf45f1bc8b7dacfd4  src/managed/veridom-milestones/keys/requestTranche.prover  (5238482 bytes)
-26f60cb8709903db82170398208c52f048a50fd323f2751bf8d41fe1d6c3b1c8  src/managed/veridom-milestones/keys/requestTranche.verifier  (2119 bytes)
-1ddca5e48ba870277b05821cd9ff40375f1dbf38c4a5aa4d212e00689e89691f  src/managed/veridom-milestones/keys/revokeInspector.prover  (2820215 bytes)
-0757ee84c9f7d3afd5ae56e42909f3b3eca6a23467961c25c34df605fb17dc34  src/managed/veridom-milestones/keys/revokeInspector.verifier  (2119 bytes)
-65f20633116d7586e00d40fbbb3e80abe560cfceac4891ac0ad51f36bf9f2f5d  src/managed/veridom-milestones/zkir/acceptProject.bzkir  (475 bytes)
-102527adbd406cdbd549d790170e6ad30190422f57e661f93625298d70056753  src/managed/veridom-milestones/zkir/acceptProject.zkir  (8442 bytes)
-8ceec961325b1ebd0200b0d5d052fb0b3ceb2279b00fecf7a7868288a2bd09f0  src/managed/veridom-milestones/zkir/attestMilestone.bzkir  (992 bytes)
-33aa9adc6d66221b9b48b46adbeab32a46fbbd2cd68b0e39fd71c3d95cd90bb2  src/managed/veridom-milestones/zkir/attestMilestone.zkir  (15689 bytes)
-5288831b15dc1d1f3c166663798d1a051376bf8deb3eabcfa959919be6f0ab41  src/managed/veridom-milestones/zkir/discloseToAuditor.bzkir  (977 bytes)
-2ee3da01df130cc841916ccfcc4b62774b815aac6bf21615b198df5ea4f8f150  src/managed/veridom-milestones/zkir/discloseToAuditor.zkir  (14751 bytes)
-c4c0dc957182848c760cdffeef37fe34d9dd2581329aac269db9d041e3039a8a  src/managed/veridom-milestones/zkir/registerInspector.bzkir  (236 bytes)
-b2568962fb92d82b46dd75a20f1f1036f579b697a250b15233725e086145317c  src/managed/veridom-milestones/zkir/registerInspector.zkir  (3090 bytes)
-28204fd2cb103e8cc45e7c365096ef8f524f38d4f2ba4361f15b314883d91589  src/managed/veridom-milestones/zkir/registerProject.bzkir  (388 bytes)
-542f0a67769fe82a1da11c17dffef63da4186a504c0ccc8ecceb2f4390a498d0  src/managed/veridom-milestones/zkir/registerProject.zkir  (6467 bytes)
-b57078634d1c741cb5b397d634872ae73d8587fa2515d15f6af981c1997d8d89  src/managed/veridom-milestones/zkir/releaseTranche.bzkir  (634 bytes)
-9ad0eee9726430182c33e5edc060dcf2b3a1a815ba005036a41dffaacfcf3a86  src/managed/veridom-milestones/zkir/releaseTranche.zkir  (11605 bytes)
-cb663e71c6bc162727665b169b9ac3ca118e8144b82c359b80842b0a449d3a18  src/managed/veridom-milestones/zkir/requestTranche.bzkir  (891 bytes)
-5cb568f72ff84b50d9d1a76ad9a4cfdd26956c7e65fc72a531bed70f052e8309  src/managed/veridom-milestones/zkir/requestTranche.zkir  (15189 bytes)
-e5eeb85ac49a8f3b8d5754d3037fe6059a299c239f22c0c99101641fbc124e1c  src/managed/veridom-milestones/zkir/revokeInspector.bzkir  (240 bytes)
-d0e9c13a06190ca83a962f958f47c62e41bd735e6831208de7bad55b5148f305  src/managed/veridom-milestones/zkir/revokeInspector.zkir  (3724 bytes)
+ad1c2784fbd8269b3c1674e0c5cfb96ff9143efae09cf1e353f4a7541c21cece  src/managed/veridom-milestones/compiler/contract-info.json  (20495 bytes)
+5d8999284d30bfd99317cc0528e93eac831500b26c68ee5eb3fd4e14646028ac  src/managed/veridom-milestones/compiler/contract-manifest.json  (6184 bytes)
+553774024e9eb77e472bcda2acdab6d5772347c53c269de7786189955bb6ad02  src/managed/veridom-milestones/contract/index.d.ts  (12851 bytes)
+66143bb74853750b33bd3bd7638e3b1c3f38e12a8f9636524fdcceca7d24305b  src/managed/veridom-milestones/contract/index.js  (208098 bytes)
+bdacb42055a3de2f8090dd1bdebf1f019a4db2a2467fa6b80210ddeead4d0e0c  src/managed/veridom-milestones/contract/index.js.map  (11158 bytes)
+5de23d73a7e93328d8bb582ab552358a7636cc14f92bbc1ae32c5ac3f2309c67  src/managed/veridom-milestones/keys/acceptProject.prover  (22550920 bytes)
+51539bdea81dd651b00719e6e9c5c20356b6bccef05827a97b56e7596db9cd30  src/managed/veridom-milestones/keys/acceptProject.verifier  (2121 bytes)
+a93f70fabe27c2e5fdcdc69227b85746805cf1c479bc6b622dc1b8998d4c0bf9  src/managed/veridom-milestones/keys/attestMilestone.prover  (24649926 bytes)
+03493399e2092acdd0669ea3000a197f8c667e80476e143d37ee38435452a7bb  src/managed/veridom-milestones/keys/attestMilestone.verifier  (2313 bytes)
+bc9066f4e5ec2d1ee18eccdf428be121111c9e1ed3ebb2c4f09681e5a60e0b18  src/managed/veridom-milestones/keys/discloseToAuditor.prover  (49291287 bytes)
+b76d7b3434d86e9e88b917948d24714d197f495d643b6e5dcf418ff51b598f90  src/managed/veridom-milestones/keys/discloseToAuditor.verifier  (2313 bytes)
+25e290707af2ab746fc5846dc8c658fcaba5020595587668a66a4b535845859e  src/managed/veridom-milestones/keys/registerInspector.prover  (12326246 bytes)
+21755c98384abf238448b54df3d0dba02b532dee5aa36c56988429d5f84296ee  src/managed/veridom-milestones/keys/registerInspector.verifier  (2313 bytes)
+52e5e7c6011b3b952e196fe173cb59b12f8835bcb2633278d76ac4764ea650b9  src/managed/veridom-milestones/keys/registerProject.prover  (11277834 bytes)
+10e1d121c9707dd29a694d4a7420598c95fbc4d745f9f7df14afecd243d2646a  src/managed/veridom-milestones/keys/registerProject.verifier  (2121 bytes)
+e0d6fae6838f2ad42ccdacc09f1cbfc15730cfb642e123c5802e080b8ec8cec8  src/managed/veridom-milestones/keys/releaseTranche.prover  (11278530 bytes)
+346f054c3d6c4f6c5180c503e3f9a9896200d8d8c4b1c3c5c63fac8e866892db  src/managed/veridom-milestones/keys/releaseTranche.verifier  (2121 bytes)
+4d71385bc7e7971ec7749ae43de4bf838a848938f9f2d8ff49a1b2e504268391  src/managed/veridom-milestones/keys/requestTranche.prover  (22553091 bytes)
+f9686c8655d3aa0b3c9dc28cacbf86e9bead67c74d5274d31f66a1a13b5aaa0c  src/managed/veridom-milestones/keys/requestTranche.verifier  (2121 bytes)
+2127b4f90a53483ce8918af7dcf8272c7c5611d513d6863040addc127cbd56d6  src/managed/veridom-milestones/keys/revokeInspector.prover  (11277198 bytes)
+83b94ff99fb0c52f919bfc2f612c029a3cdcbb20794ed6d87b9b0f68d9d45317  src/managed/veridom-milestones/keys/revokeInspector.verifier  (2121 bytes)
+d2be59e0a62eae1c2822df5a5178ed57c1f519545de403bf88b12bad4e79ccae  src/managed/veridom-milestones/zkir/acceptProject.bzkir  (2168 bytes)
+94e734ab5fced5c088e0dbb5f9f373752889fb4e46ba5817c73e028b56cf89bb  src/managed/veridom-milestones/zkir/acceptProject.zkir  (7716 bytes)
+09afe43b85b09c65382dff635696d2524a95fcd4dd8e647f437e3abce1625d91  src/managed/veridom-milestones/zkir/attestMilestone.bzkir  (3622 bytes)
+c0b7159bb4cd0cf5adb80ab7c5ea04d94f52d957223028332862510394c0805c  src/managed/veridom-milestones/zkir/attestMilestone.zkir  (12182 bytes)
+90076a4e683f28ad240688f76b05b7878dacd3790fe4410032d2ed67c4f0cf42  src/managed/veridom-milestones/zkir/discloseToAuditor.bzkir  (3447 bytes)
+608928591f36ed14d672c2335524974bcdaf0a20c26e2eb7c49a83ec1b37288b  src/managed/veridom-milestones/zkir/discloseToAuditor.zkir  (12568 bytes)
+5202ff9871e09fd75edc31ba7136eee54305ebc2b6d062f2b3c7721f50ad815c  src/managed/veridom-milestones/zkir/registerInspector.bzkir  (710 bytes)
+de4fc2add9c11cc10cd580fa339719fab86816fbff6c6960a7b873ef8b923cc4  src/managed/veridom-milestones/zkir/registerInspector.zkir  (2205 bytes)
+804a76d03bbcf50cb293822d327bfcaeae2ffbf15887da2c9028a3e3d0b4c58d  src/managed/veridom-milestones/zkir/registerProject.bzkir  (1274 bytes)
+12611551b33f453de5af3e4f56a4b234779eab06848a6a18fea4452e032fbbb1  src/managed/veridom-milestones/zkir/registerProject.zkir  (4388 bytes)
+5ec5acecfc27de0e888562d319d258df253c1567af46e6a6ca2a93ecd91c5d4a  src/managed/veridom-milestones/zkir/releaseTranche.bzkir  (1970 bytes)
+313bc16eac19f72652032e7c13aa08df59fe4c537b8317f66d9463cf464b2417  src/managed/veridom-milestones/zkir/releaseTranche.zkir  (6786 bytes)
+d8164426ad3d24b16759bc19dbb518b9b5be6c88240286d743d19e5fdcd78136  src/managed/veridom-milestones/zkir/requestTranche.bzkir  (4339 bytes)
+16b933a0e807da830daf26859df386e80bf6d77b8fadeb8dcf5b42944c7374c1  src/managed/veridom-milestones/zkir/requestTranche.zkir  (14047 bytes)
+d58c142f0da6fdf49336506c5b6cea09097a1d444faadb1aa73896a555582548  src/managed/veridom-milestones/zkir/revokeInspector.bzkir  (638 bytes)
+a734d1e869a8bb91658b4d4b6653c8267b35b3d6d831ab1aa4ca4fda3228cd6f  src/managed/veridom-milestones/zkir/revokeInspector.zkir  (2475 bytes)

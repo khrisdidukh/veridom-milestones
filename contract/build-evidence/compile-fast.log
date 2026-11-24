@@ -1,0 +1,44 @@
+# Veridom Milestones: compiler build record
+date:              2026-11-24T09:50:08.767Z
+compact CLI:       compact 0.5.3
+compiler:          0.36.0 (b5d9e4dfc 2026-11-03)
+language version:  0.28.0
+runtime required:  0.21.0
+mode:              --skip-zk (no proving keys)
+duration:          0.7 s
+
+$ compact compile --skip-zk src/veridom-milestones.compact src/managed/veridom-milestones
+(no output)
+
+## Circuits (from compiler/contract-info.json)
+- lenderKey (pure)
+- builderKey (pure)
+- termsCommitment (pure)
+- amountCommitment (pure)
+- evidenceCommitment (pure)
+- receiptCommitment (pure)
+- milestoneMessage (pure)
+- schnorrChallenge (pure)
+- registerInspector [proof]
+- revokeInspector [proof]
+- registerProject [proof]
+- releaseTranche [proof]
+- acceptProject [proof]
+- attestMilestone [proof]
+- requestTranche [proof]
+- discloseToAuditor [proof]
+
+## Artifacts (sha256)
+ad1c2784fbd8269b3c1674e0c5cfb96ff9143efae09cf1e353f4a7541c21cece  src/managed/veridom-milestones/compiler/contract-info.json  (20495 bytes)
+6ef3f0bbe562ce813697e69e3e87683dd5b5e279453994ae114183193f0977cf  src/managed/veridom-milestones/compiler/contract-manifest.json  (2217 bytes)
+553774024e9eb77e472bcda2acdab6d5772347c53c269de7786189955bb6ad02  src/managed/veridom-milestones/contract/index.d.ts  (12851 bytes)
+dbf21e24edac5d26a11b3d380d39f50175dc0377418907ae5285128102ece2bd  src/managed/veridom-milestones/contract/index.js  (207385 bytes)
+d73add61bf5aa10042b208911f4c84a37db65b9d0ae7a1844355ccf8524f8e32  src/managed/veridom-milestones/contract/index.js.map  (11149 bytes)
+94e734ab5fced5c088e0dbb5f9f373752889fb4e46ba5817c73e028b56cf89bb  src/managed/veridom-milestones/zkir/acceptProject.zkir  (7716 bytes)
+c0b7159bb4cd0cf5adb80ab7c5ea04d94f52d957223028332862510394c0805c  src/managed/veridom-milestones/zkir/attestMilestone.zkir  (12182 bytes)
+608928591f36ed14d672c2335524974bcdaf0a20c26e2eb7c49a83ec1b37288b  src/managed/veridom-milestones/zkir/discloseToAuditor.zkir  (12568 bytes)
+de4fc2add9c11cc10cd580fa339719fab86816fbff6c6960a7b873ef8b923cc4  src/managed/veridom-milestones/zkir/registerInspector.zkir  (2205 bytes)
+12611551b33f453de5af3e4f56a4b234779eab06848a6a18fea4452e032fbbb1  src/managed/veridom-milestones/zkir/registerProject.zkir  (4388 bytes)
+313bc16eac19f72652032e7c13aa08df59fe4c537b8317f66d9463cf464b2417  src/managed/veridom-milestones/zkir/releaseTranche.zkir  (6786 bytes)
+16b933a0e807da830daf26859df386e80bf6d77b8fadeb8dcf5b42944c7374c1  src/managed/veridom-milestones/zkir/requestTranche.zkir  (14047 bytes)
+a734d1e869a8bb91658b4d4b6653c8267b35b3d6d831ab1aa4ca4fda3228cd6f  src/managed/veridom-milestones/zkir/revokeInspector.zkir  (2475 bytes)

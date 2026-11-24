@@ -77,8 +77,8 @@ module schnorr {
     const c: Field = disclose(cTruncated) as Field;
     // s*G == R + c*pk, compared coordinate-wise (JubjubPoint `==` is reference
     // equality in the generated JavaScript).
-    const lhs: JubjubPoint = ecMulGenerator(response);
-    const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c));
+    const lhs: JubjubPoint = ecMulGenerator(response as JubjubScalar);
+    const rhs: JubjubPoint = ecAdd(announcement, ecMul(pk, c as JubjubScalar));
     assert(jubjubPointX(lhs) == jubjubPointX(rhs) && jubjubPointY(lhs) == jubjubPointY(rhs),
            "Invalid inspector signature");
   }

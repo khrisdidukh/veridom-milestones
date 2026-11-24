@@ -22,16 +22,16 @@ const encodings = (v: bigint): string[] => {
 
 describe('public ledger privacy', () => {
   it('contains no secret, salt, evidence hash, amount or limit', async () => {
-    const s = setup();
+    const s = await setup();
     const amounts = [EUR(111_111.11), EUR(77_777.77)];
     const evidence: string[] = [];
     for (const [i, amount] of amounts.entries()) {
       const { evidenceHash } = await inspectStage(s, BigInt(i), amount);
       evidence.push(toHex(evidenceHash));
-      s.sim.attestMilestone(BUILDER, s.projectId, BigInt(i));
-      s.sim.requestTranche(BUILDER, s.projectId, BigInt(i));
+      await s.sim.attestMilestone(BUILDER, s.projectId, BigInt(i));
+      await s.sim.requestTranche(BUILDER, s.projectId, BigInt(i));
     }
-    s.sim.discloseToAuditor(BUILDER, s.projectId, 0n, FactKind.TrancheAmount, randomBytes32(), randomBytes32());
+    await s.sim.discloseToAuditor(BUILDER, s.projectId, 0n, FactKind.TrancheAmount, randomBytes32(), randomBytes32());
 
     // Serialise the whole public contract state.
     const state = s.sim.publicStateDump().toLowerCase();
@@ -58,9 +58,9 @@ describe('public ledger privacy', () => {
   });
 
   it('shows the facts the bank needs: stage status, inspector, counts', async () => {
-    const s = setup();
+    const s = await setup();
     await inspectStage(s, 0n, EUR(100_000));
-    s.sim.attestMilestone(BUILDER, s.projectId, 0n);
+    await s.sim.attestMilestone(BUILDER, s.projectId, 0n);
     const p = s.sim.ledger.projects.lookup(s.projectId);
     expect(p.stagesAttested).toBe(1n);
     expect(s.sim.ledger.stages.lookup(s.projectId).lookup(0n).inspectorId).toBe(s.inspectorId);

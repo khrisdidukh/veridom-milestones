@@ -71,61 +71,61 @@ export type Witnesses<PS> = {
 export type ImpureCircuits<PS> = {
   registerInspector(context: __compactRuntime.CircuitContext<PS>,
                     inspectorId_0: bigint,
-                    inspectorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
+                    inspectorPk_0: __compactRuntime.JubjubPoint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   revokeInspector(context: __compactRuntime.CircuitContext<PS>,
-                  inspectorId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  inspectorId_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerProject(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
                   builder_0: Uint8Array,
                   terms_0: Uint8Array,
-                  stageCount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stageCount_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   releaseTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   acceptProject(context: __compactRuntime.CircuitContext<PS>,
-                projectId_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                projectId_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
   attestMilestone(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
-                  stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   requestTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   discloseToAuditor(context: __compactRuntime.CircuitContext<PS>,
                     projectId_0: Uint8Array,
                     stage_0: bigint,
                     kind_0: FactKind,
                     auditor_0: Uint8Array,
-                    nonce_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                    nonce_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
 }
 
 export type ProvableCircuits<PS> = {
   registerInspector(context: __compactRuntime.CircuitContext<PS>,
                     inspectorId_0: bigint,
-                    inspectorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
+                    inspectorPk_0: __compactRuntime.JubjubPoint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   revokeInspector(context: __compactRuntime.CircuitContext<PS>,
-                  inspectorId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  inspectorId_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerProject(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
                   builder_0: Uint8Array,
                   terms_0: Uint8Array,
-                  stageCount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stageCount_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   releaseTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   acceptProject(context: __compactRuntime.CircuitContext<PS>,
-                projectId_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                projectId_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
   attestMilestone(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
-                  stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   requestTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   discloseToAuditor(context: __compactRuntime.CircuitContext<PS>,
                     projectId_0: Uint8Array,
                     stage_0: bigint,
                     kind_0: FactKind,
                     auditor_0: Uint8Array,
-                    nonce_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                    nonce_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
 }
 
 export type PureCircuits = {
@@ -147,58 +147,58 @@ export type PureCircuits = {
 }
 
 export type Circuits<PS> = {
-  lenderKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
-  builderKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+  lenderKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
+  builderKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
   termsCommitment(context: __compactRuntime.CircuitContext<PS>,
                   terms_0: LoanTerms,
-                  salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+                  salt_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
   amountCommitment(context: __compactRuntime.CircuitContext<PS>,
                    amount_0: bigint,
-                   salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+                   salt_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
   evidenceCommitment(context: __compactRuntime.CircuitContext<PS>,
                      evidenceHash_0: Uint8Array,
-                     salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+                     salt_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
   receiptCommitment(context: __compactRuntime.CircuitContext<PS>,
                     receipt_0: DisclosureReceipt,
-                    nonce_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+                    nonce_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, Uint8Array>>;
   milestoneMessage(context: __compactRuntime.CircuitContext<PS>,
                    contractAddress_0: Uint8Array,
                    projectId_0: Uint8Array,
                    stage_0: bigint,
-                   evidenceHash_0: Uint8Array): __compactRuntime.CircuitResults<PS, bigint[]>;
+                   evidenceHash_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, bigint[]>>;
   schnorrChallenge(context: __compactRuntime.CircuitContext<PS>,
                    ann_x_0: bigint,
                    ann_y_0: bigint,
                    pk_x_0: bigint,
                    pk_y_0: bigint,
-                   msg_0: bigint[]): __compactRuntime.CircuitResults<PS, bigint>;
+                   msg_0: bigint[]): Promise<__compactRuntime.CircuitResults<PS, bigint>>;
   registerInspector(context: __compactRuntime.CircuitContext<PS>,
                     inspectorId_0: bigint,
-                    inspectorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
+                    inspectorPk_0: __compactRuntime.JubjubPoint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   revokeInspector(context: __compactRuntime.CircuitContext<PS>,
-                  inspectorId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  inspectorId_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerProject(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
                   builder_0: Uint8Array,
                   terms_0: Uint8Array,
-                  stageCount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stageCount_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   releaseTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   acceptProject(context: __compactRuntime.CircuitContext<PS>,
-                projectId_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                projectId_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
   attestMilestone(context: __compactRuntime.CircuitContext<PS>,
                   projectId_0: Uint8Array,
-                  stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                  stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   requestTranche(context: __compactRuntime.CircuitContext<PS>,
                  projectId_0: Uint8Array,
-                 stage_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+                 stage_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
   discloseToAuditor(context: __compactRuntime.CircuitContext<PS>,
                     projectId_0: Uint8Array,
                     stage_0: bigint,
                     kind_0: FactKind,
                     auditor_0: Uint8Array,
-                    nonce_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                    nonce_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
 }
 
 export type Ledger = {
@@ -245,18 +245,17 @@ export type Ledger = {
   readonly disclosureCount: bigint;
 }
 
-export type ContractReferenceLocations = any;
-
-export declare const contractReferenceLocations : ContractReferenceLocations;
-
 export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>> {
   witnesses: W;
   circuits: Circuits<PS>;
   impureCircuits: ImpureCircuits<PS>;
   provableCircuits: ProvableCircuits<PS>;
   constructor(witnesses: W);
-  initialState(context: __compactRuntime.ConstructorContext<PS>): __compactRuntime.ConstructorResult<PS>;
+  initialState(context: __compactRuntime.ConstructorContext<PS>): Promise<__compactRuntime.ConstructorResult<PS>>;
 }
 
 export declare function ledger(state: __compactRuntime.StateValue | __compactRuntime.ChargedState): Ledger;
 export declare const pureCircuits: PureCircuits;
+export declare const expectedVk: Record<string, string>;
+export declare const circuitSignatures: __compactRuntime.CircuitSignatures;
+export declare const declaredInterfaces: __compactRuntime.DeclaredInterfaces;

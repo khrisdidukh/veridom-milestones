@@ -20,18 +20,18 @@ import { BANK, BUILDER, EUR, STRANGER, inspectStage, setup, type Scenario } from
 const auditor = randomBytes32();
 
 const prepared = async () => {
-  const s = setup();
+  const s = await setup();
   await inspectStage(s, 0n, EUR(110_000));
-  s.sim.attestMilestone(BUILDER, s.projectId, 0n);
-  s.sim.requestTranche(BUILDER, s.projectId, 0n);
+  await s.sim.attestMilestone(BUILDER, s.projectId, 0n);
+  await s.sim.requestTranche(BUILDER, s.projectId, 0n);
   await inspectStage(s, 1n, EUR(60_000));
-  s.sim.attestMilestone(BUILDER, s.projectId, 1n);
+  await s.sim.attestMilestone(BUILDER, s.projectId, 1n);
   return s;
 };
 
-const disclose = (s: Scenario, fact: FactName, stage: bigint, to = auditor): DisclosurePacket => {
+const disclose = async (s: Scenario, fact: FactName, stage: bigint, to = auditor): Promise<DisclosurePacket> => {
   const nonce = randomBytes32();
-  s.sim.discloseToAuditor(BUILDER, s.projectId, stage, FactKind[fact], to, nonce);
+  await s.sim.discloseToAuditor(BUILDER, s.projectId, stage, FactKind[fact], to, nonce);
   return createDisclosurePacket(s.sim.privateState(BUILDER), {
     contractAddress: s.sim.contractAddress,
     projectId: s.projectId,
@@ -48,7 +48,7 @@ const verify = (s: Scenario, packet: DisclosurePacket, as = auditor) =>
 describe('discloseToAuditor: consented disclosure', () => {
   it('opens exactly one tranche amount to the auditor', async () => {
     const s = await prepared();
-    const packet = disclose(s, 'TrancheAmount', 0n);
+    const packet = await disclose(s, 'TrancheAmount', 0n);
     expect(packet.value).toBe(EUR(110_000).toString());
     const result = verify(s, packet);
     expect(result.valid).toBe(true);
@@ -62,22 +62,22 @@ describe('discloseToAuditor: consented disclosure', () => {
 
   it('opens the evidence-bundle hash of a stage', async () => {
     const s = await prepared();
-    const packet = disclose(s, 'EvidenceBundle', 1n);
+    const packet = await disclose(s, 'EvidenceBundle', 1n);
     expect(packet.value).toBe(toHex(s.sim.privateState(BUILDER).projects[toHex(s.projectId)].stages['1'].evidenceHash));
     expect(verify(s, packet).valid).toBe(true);
   });
 
   it('opens the cumulative amount drawn', async () => {
     const s = await prepared();
-    const packet = disclose(s, 'TotalDrawn', 0n);
+    const packet = await disclose(s, 'TotalDrawn', 0n);
     expect(packet.value).toBe(EUR(110_000).toString());
     expect(verify(s, packet).valid).toBe(true);
   });
 
   it('keeps the receipt unlinkable: the ledger stores a salted commitment only', async () => {
     const s = await prepared();
-    disclose(s, 'TrancheAmount', 0n);
-    disclose(s, 'TrancheAmount', 0n);
+    await disclose(s, 'TrancheAmount', 0n);
+    await disclose(s, 'TrancheAmount', 0n);
     const receipts = [...s.sim.ledger.disclosureReceipts].map(toHex);
     expect(receipts).toHaveLength(2);
     expect(receipts[0]).not.toBe(receipts[1]);
@@ -88,7 +88,7 @@ describe('discloseToAuditor: consented disclosure', () => {
 describe('discloseToAuditor: disclosure without consent', () => {
   it('rejects a disclosure transaction from the bank', async () => {
     const s = await prepared();
-    expect(() => s.sim.discloseToAuditor(BANK, s.projectId, 0n, FactKind.TrancheAmount, auditor, randomBytes32())).toThrow(
+    await expect(s.sim.discloseToAuditor(BANK, s.projectId, 0n, FactKind.TrancheAmount, auditor, randomBytes32())).rejects.toThrow(
       'Only the builder of this project can do this',
     );
   });
@@ -96,9 +96,9 @@ describe('discloseToAuditor: disclosure without consent', () => {
   it('rejects a disclosure transaction from the auditor, even holding a copy of the data', async () => {
     const s = await prepared();
     s.sim.setPrivateState(STRANGER, { ...s.sim.privateState(BUILDER), secret: randomBytes32() });
-    expect(() =>
+    await expect(
       s.sim.discloseToAuditor(STRANGER, s.projectId, 0n, FactKind.TrancheAmount, auditor, randomBytes32()),
-    ).toThrow('Only the builder of this project can do this');
+    ).rejects.toThrow('Only the builder of this project can do this');
     expect(s.sim.ledger.disclosureReceipts.size()).toBe(0n);
   });
 
@@ -121,13 +121,13 @@ describe('discloseToAuditor: disclosure without consent', () => {
 
   it('fails verification for a packet addressed to another auditor', async () => {
     const s = await prepared();
-    const packet = disclose(s, 'TrancheAmount', 0n);
+    const packet = await disclose(s, 'TrancheAmount', 0n);
     expect(verify(s, packet, randomBytes32()).valid).toBe(false);
   });
 
   it('fails verification when the disclosed value is altered', async () => {
     const s = await prepared();
-    const packet = disclose(s, 'TrancheAmount', 0n);
+    const packet = await disclose(s, 'TrancheAmount', 0n);
     const tampered = { ...packet, value: EUR(10_000).toString() };
     const result = verify(s, tampered);
     expect(result.valid).toBe(false);
@@ -136,10 +136,10 @@ describe('discloseToAuditor: disclosure without consent', () => {
 
   it('rejects disclosing a tranche that was never requested', async () => {
     const s = await prepared();
-    expect(() => s.sim.discloseToAuditor(BUILDER, s.projectId, 1n, FactKind.TrancheAmount, auditor, randomBytes32())).toThrow(
+    await expect(s.sim.discloseToAuditor(BUILDER, s.projectId, 1n, FactKind.TrancheAmount, auditor, randomBytes32())).rejects.toThrow(
       'No tranche requested for this stage',
     );
-    expect(() => s.sim.discloseToAuditor(BUILDER, s.projectId, 2n, FactKind.EvidenceBundle, auditor, randomBytes32())).toThrow(
+    await expect(s.sim.discloseToAuditor(BUILDER, s.projectId, 2n, FactKind.EvidenceBundle, auditor, randomBytes32())).rejects.toThrow(
       'Stage has no record yet',
     );
   });
@@ -153,7 +153,7 @@ describe('discloseToAuditor: disclosure without consent', () => {
       ...ps,
       projects: { ...ps.projects, [key]: { ...p, stages: { ...p.stages, '0': { ...p.stages['0'], evidenceSalt: randomBytes32() } } } },
     });
-    expect(() => s.sim.discloseToAuditor(BUILDER, s.projectId, 0n, FactKind.EvidenceBundle, auditor, randomBytes32())).toThrow(
+    await expect(s.sim.discloseToAuditor(BUILDER, s.projectId, 0n, FactKind.EvidenceBundle, auditor, randomBytes32())).rejects.toThrow(
       'Evidence opening does not match the on-chain commitment',
     );
   });

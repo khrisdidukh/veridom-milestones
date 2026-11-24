@@ -12,14 +12,20 @@ import type { CallOutcome, MilestonesBackend, Party } from './types';
 
 export class SimulatorBackend implements MilestonesBackend {
   readonly mode = 'simulator' as const;
-  readonly where = 'In-process simulator (compact-runtime 0.16.0, no network, no proofs)';
-  private readonly sim: MilestonesSimulator;
+  readonly where = 'In-process simulator (compact-runtime 0.21.0, ledger 9, no network, no proofs)';
+
+  private constructor(private readonly sim: MilestonesSimulator) {}
 
   /** Deploys a fresh contract in this tab; the bank is the deployer. */
-  constructor(bankState: VeridomPrivateState, builderState: VeridomPrivateState, auditorState = createPrivateState()) {
-    this.sim = new MilestonesSimulator('bank', bankState);
-    this.sim.addParty('builder', builderState);
-    this.sim.addParty('auditor', auditorState);
+  static async create(
+    bankState: VeridomPrivateState,
+    builderState: VeridomPrivateState,
+    auditorState = createPrivateState(),
+  ): Promise<SimulatorBackend> {
+    const sim = await MilestonesSimulator.create('bank', bankState);
+    sim.addParty('builder', builderState);
+    sim.addParty('auditor', auditorState);
+    return new SimulatorBackend(sim);
   }
 
   get contractAddress(): string {
@@ -47,7 +53,7 @@ export class SimulatorBackend implements MilestonesBackend {
   }
 
   async call(party: Party, circuit: ProvableCircuitId, args: unknown[]): Promise<CallOutcome> {
-    this.sim.callCircuit(party, circuit, args);
+    await this.sim.callCircuit(party, circuit, args);
     return {};
   }
 }

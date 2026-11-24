@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     esbuildOptions: { define: { global: 'globalThis' }, target: 'es2022' },
     // The on-chain runtime is a WASM package and must not be pre-bundled.
-    exclude: ['@midnight-ntwrk/onchain-runtime-v3'],
+    exclude: ['@midnightntwrk/onchain-runtime-v4'],
   },
   build: {
     target: 'es2022',

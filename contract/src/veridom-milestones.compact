@@ -36,7 +36,7 @@
 // spent-attestation nullifiers            |
 // salted disclosure receipts              | which auditor received which value
 
-pragma language_version 0.23;
+pragma language_version >= 0.23;
 
 import CompactStandardLibrary;
 import "schnorr" prefix Schnorr_;

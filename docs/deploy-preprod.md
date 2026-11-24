@@ -1,23 +1,11 @@
 # Deploying to Midnight Preprod
 
-Status: **not deployed.** Preprod moved to ledger 9 on 9 November 2026
-([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)). A ledger 9 network does not decode
-ledger 8 transactions, and new contracts must be compiled with Compact 0.36.0. This build uses Compact 0.31.1
-and midnight-js 4.1.1 (ledger 8), so the steps below work only after the rebuild for ledger 9 described at
-the end of this page. Until then the app shows a note on the wallet path for Preprod and Preview.
+Status: **ledger 9 build ready, not yet deployed.** Preprod moved to ledger 9 on 9 November 2026
+([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)). On 24 November 2026 the contract and the app were
+rebuilt for ledger 9 (Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.1); see the README section
+"Ledger 9 and Preprod".
 
-What already ran:
-
-- the full flow with real ZK proofs on a local Midnight devnet through midnight-js 4.1.1 with a headless wallet
-  (`contract/e2e/local-devnet.e2e.test.ts`);
-- the web app's wallet path on the same devnet: the real app in Chromium, a stand-in with the shape of the
-  DApp Connector API 4.0.1 in place of the Lace extension, one button, eight proven transactions, state checked
-  on the indexer (`contract/e2e/lace-connector.e2e.test.ts`);
-- both are recorded in [`contract/build-evidence/local-devnet-run.log`](../contract/build-evidence/local-devnet-run.log).
-
-What has not run: the Lace extension itself, and any public network.
-
-## The short way: the hosted app (after the ledger 9 rebuild)
+## The short way: the hosted app
 
 The app at <https://khrisdidukh.github.io/veridom-milestones/> serves the proving keys, so nothing has to be
 built or started locally.
@@ -83,7 +71,5 @@ answers 410) and a wallet sync of about an hour. The wallet path is also the one
 Preprod, Preview and Mainnet run ledger 9.1.0.1 on node 2.1.101 (support matrix of 13 November 2026). The
 ledger 9 set is Compact 0.36.0 (language 0.28.0), compact-runtime 0.21.0, Midnight.js 5.0.0, Compact.js 3.0.0,
 on-chain runtime v4, wallet SDK 2.0.0, DApp Connector API 4.1.0 (now under `@midnightntwrk`), proof server
-9.0.0 and indexer 4.4.101. This repository is still on the ledger 8 set (compiler 0.31.1, compact-runtime
-0.16.0, midnight-js 4.1.1, proof server 8.1.3). Contracts compiled with 0.31.1 that were deployed before the
-upgrade keep working, but a new one cannot be deployed from ledger 8 artifacts, so the rebuild comes first.
-Check the [support matrix](https://docs.midnight.network/relnotes/support-matrix) on the day.
+9.0.0 and indexer 4.4.101. This repository uses that set since 24 November 2026 (Compact 0.36.0, compact-runtime 0.21.0, Midnight.js
+5.0.1, DApp Connector API 4.1.0). Check the [support matrix](https://docs.midnight.network/relnotes/support-matrix) on the day.

@@ -62,13 +62,10 @@ export function Header({ m }: { m: Milestones }) {
                 <button disabled={m.busy !== null} onClick={() => m.connectWallet(network)}>
                   Connect Lace
                 </button>
-                {network !== 'undeployed' && (
-                  <p className="hint ledger-note" role="note">
-                    Preprod and Preview moved to ledger 9 on 9 and 7 November 2026. This build is compiled for
-                    ledger 8 (Compact 0.31.1), so those networks will refuse its deploy. It runs end to end with
-                    real proofs on a local ledger 8 devnet; the ledger 9 build is next.
-                  </p>
-                )}
+                <p className="hint ledger-note" role="note">
+                  Built for ledger 9 (Compact 0.36.0, Midnight.js 5), the version Preprod and Preview run since
+                  November 2026. Lace needs tDUST for fees: in Lace choose Generate tDUST first.
+                </p>
               </div>
             ) : (
               <div className="inline-form">

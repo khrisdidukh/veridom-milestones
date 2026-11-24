@@ -23,13 +23,13 @@ tracks a private home build against the approved plans with a diary, photos and 
 | | |
 | --- | --- |
 | Contract | [`contract/src/veridom-milestones.compact`](contract/src/veridom-milestones.compact), 8 provable circuits, 8 pure circuits |
-| Toolchain | `compact` 0.5.3, compiler **0.31.1**, language 0.23, compact-runtime 0.16.0, midnight-js 4.1.1: the ledger 8 set. Preprod and Mainnet moved to ledger 9 in November 2026; see [Ledger 9](#ledger-9-and-preprod) |
+| Toolchain | Compact compiler **0.36.0**, language 0.28, compact-runtime 0.21.0, Midnight.js 5.0.1: the ledger 9 set that Preprod and Mainnet run since November 2026. First built and tested on the ledger 8 set (compiler 0.31.1); see [Ledger 9](#ledger-9-and-preprod) |
 | Compile record | [`contract/build-evidence/compile.log`](contract/build-evidence/compile.log) |
 | Live app | **<https://khrisdidukh.github.io/veridom-milestones/>**: press **Run stage 1 for me**. No wallet, no install |
-| Tests | 50 simulator tests (`npm test`); 6 end-to-end tests with real ZK proofs on a local devnet (`npm run test:e2e`), one of which drives the web app through the wallet connector; a browser flow test (`npm run test:ui`) |
+| Tests | 50 simulator tests on the ledger 9 runtime (`npm test`); a browser flow test (`npm run test:ui`, 18 accepted and 2 expected rejections); 6 end-to-end tests with real ZK proofs on a local devnet, run on the ledger 8 build (`contract/e2e/`, being ported to ledger 9) |
 | Devnet run record | [`contract/build-evidence/local-devnet-run.log`](contract/build-evidence/local-devnet-run.log): 17 proven transactions with tx ids and blocks (9 from the headless run, 8 from the web app) |
 | Frontend | React + TypeScript, runs the contract in the browser (simulator) or through the Lace wallet |
-| Preprod | Not deployed. Preprod moved to ledger 9 on 9 Nov 2026 and refuses new ledger 8 contracts; the ledger 9 rebuild comes first. See [Ledger 9 and Preprod](#ledger-9-and-preprod) |
+| Preprod | Ledger 9 build ready; the Preprod run goes through Lace from the live app. See [Ledger 9 and Preprod](#ledger-9-and-preprod) |
 | Pitch | [slide deck (PDF)](docs/slides/veridom-milestones-deck.pdf) ([HTML source](docs/slides/deck.html)) |
 | Demo video | [docs/video/veridom-milestones-demo.mp4](docs/video/veridom-milestones-demo.mp4) (2 min 17 s, captions, no sound needed) |
 | License | [Apache-2.0](LICENSE); third-party attribution in [NOTICE](NOTICE) |
@@ -159,7 +159,7 @@ The wallet is the local devnet's public genesis seed, which only exists on a loc
 ### Recompiling
 
 ```bash
-npm run compile        # needs the Compact toolchain: compact update 0.31.1
+npm run compile        # needs the Compact toolchain: compact update 0.36.0
 ```
 
 The script records versions, the compiler output and SHA-256 hashes of all artifacts in
@@ -267,8 +267,8 @@ the inspector and the auditor compute exactly what the contract computes.
   [zk-loan tutorial](https://docs.midnight.network/tutorials/zk-loan/smart-contract) explains,
   `ownPublicKey()` is prover-supplied, so every role check compares a ledger key hash with
   `persistentHash(tag, localSecret())`. One consequence is useful: any wallet can pay the fee for any role.
-- **Inspector signatures verified inside the proof.** Compiler 0.31.1 has no standard-library Schnorr verifier
-  yet, so `schnorr.compact` is the documented polyfill from the official example, including the range check
+- **Inspector signatures verified inside the proof.** The contract was written on compiler 0.31.1, which had no
+  standard-library Schnorr verifier, so `schnorr.compact` is the documented polyfill from the official example, including the range check
   on the witness-assisted challenge reduction. A regression test feeds an out-of-range quotient and expects
   rejection.
 - **Replay protection on three levels.** The signed message binds `kernel.self()`, the project and the stage;
@@ -294,29 +294,35 @@ the inspector and the auditor compute exactly what the contract computes.
   keeps its own private state.
 - In wallet mode the private states live in the tab's memory. Reloading the page loses the bank's and the
   builder's secrets, so a contract deployed from a tab can only be continued from that tab.
-- Not deployed on a public network yet (see below). All on-chain evidence so far is from a local ledger 8 devnet.
+- Not deployed on a public network yet (see below). The on-chain evidence so far is from a local devnet on the ledger 8 build.
 
 ---
 
 ## Ledger 9 and Preprod
 
-**Status: not deployed on Preprod.** Midnight moved Mainnet to ledger 9 on 6 November 2026 and Preprod on
-9 November 2026 ([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)). After the upgrade a
-network cannot decode ledger 8 transactions, and a new contract has to be compiled with Compact 0.36.0. This
-build was made with Compact 0.31.1 for ledger 8, so Preprod will refuse its deploy. We say so in the app too.
+**Status: rebuilt for ledger 9 on 24 November 2026; Preprod run next.** Midnight moved Mainnet to ledger 9 on
+6 November 2026 and Preprod on 9 November 2026 ([Ledger 9 upgrade](https://docs.midnight.network/relnotes/ledger-9)).
+A ledger 9 network does not decode ledger 8 transactions, and a new contract has to be compiled with Compact 0.36.0.
 
-What is built and tested, on a local ledger 8 devnet:
+What changed in the rebuild:
 
-- the same midnight-js calls (`deployContract`, `submitCallTx`, indexer and proof providers) with a headless
-  wallet (`local-devnet.e2e.test.ts`);
-- the app's wallet path in [`ui/src/midnight/lace.ts`](ui/src/midnight/lace.ts) through a stand-in with the
-  DApp Connector's shape (`lace-connector.e2e.test.ts`): the real app in Chromium, eight proven transactions.
+- Compact 0.36.0 (language 0.28, ZKIR v3). In `schnorr.compact` the curve multiplications now take a
+  `JubjubScalar`, so the response and the reduced challenge are cast to it; both are already below the Jubjub
+  order (the signer reduces `s` mod the order, the challenge is below 2^248). The signature tests, including
+  the forged-reduction and wrong-key cases, pass unchanged.
+- compact-runtime 0.21.0: the constructor and circuits are async, so the simulator is created with
+  `await MilestonesSimulator.create(...)` and every call returns a promise. Ledger 9 loads state cells
+  lazily, so the public-state dump used by the privacy test now walks the whole state tree.
+- Midnight.js 5.0.1: `providers.config` (network id and transaction TTL) instead of `setNetworkId`,
+  era-tagged wallet, Midnight and proof providers (`createLedger9WalletProvider`, `createLedger9MidnightProvider`,
+  `createLedger9ProofProvider`), private state scoped per contract with `forContract`, and era-tagged contract
+  state reads, following the official midnight-examples zk-loan UI.
 
-The rebuild for ledger 9 means: Compact 0.36.0 (language 0.28, ZKIR v3), compact-runtime 0.21.0,
-Midnight.js 5.0.0 (`providers.config` instead of `setNetworkId`), the `@midnightntwrk` DApp Connector API
-4.1.0, and a ledger 9 devnet (node 2.1.101, indexer 4.4.101, proof server 9.0.0) for the end-to-end tests.
+Tested on the ledger 9 build: the 50 simulator tests and the browser flow. The end-to-end tests with real
+proofs ran on the ledger 8 build against a local ledger 8 devnet (node 1.0.400, proof server 8.1.3); their
+port to a ledger 9 devnet (node 2.1.101, indexer 4.4.101, proof server 9.0.x) is in progress.
 
-After that, the Preprod run stays one link and one button, because the live app serves the proving keys:
+The Preprod run is one link and one button, because the live app serves the proving keys:
 
 1. In Chrome with [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on
    **Preprod**, with tNIGHT from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/)
@@ -338,7 +344,7 @@ indexer and RPC; we chose the wallet path because that is how a bank or a builde
 
 | When | What |
 | --- | --- |
-| Now | Rebuild for ledger 9 (Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.0, proof server 9.0.0), then the Preprod run through Lace, with contract address and tx ids in this README |
+| Now | Preprod run through Lace on the ledger 9 build, with contract address and tx ids in this README; end-to-end tests on a ledger 9 devnet |
 | Next 4 weeks | Evidence bundles straight from the Veridom diary (photos, inspection report, invoices of a stage); private state persisted and encrypted in the browser, so the roles survive a reload; each role in its own session instead of one tab |
 | Next 3 months | Inspector signing app with hardware-held keys; several inspectors per stage (k of n); stage-gated grants as a second use of the same contract |
 | After that | Pilot on the founder's own build, then with a lender; replace the Schnorr polyfill with a native verifier when the standard library ships one |
@@ -350,18 +356,15 @@ indexer and RPC; we chose the wallet path because that is how a bank or a builde
 | Component | Version | Source |
 | --- | --- | --- |
 | Compact devtools (`compact`) | 0.5.3 | official installer, `compact-installer.sh` |
-| Compact compiler | 0.31.1 (language 0.23.0) | `compactc_v0.31.1_x86_64-unknown-linux-musl.zip` release |
-| `@midnight-ntwrk/compact-runtime` | 0.16.0 | required by the generated code |
-| `@midnight-ntwrk/midnight-js-*` | 4.1.1 | |
-| `@midnight-ntwrk/dapp-connector-api` | 4.0.1 | |
-| `@midnight-ntwrk/wallet-sdk` | 1.2.0 | e2e only |
-| `@midnight-ntwrk/ledger-v8` / `onchain-runtime-v3` | 8.1.2 / 3.1.1 | overrides as in the official examples |
-| Node / proof server / indexer | 1.0.400 / 8.1.3 / 4.3.5 | devnet images |
+| Compact compiler | 0.36.0 (language 0.28.0) | `compactc_v0.36.0_x86_64-unknown-linux-musl.zip` release |
+| `@midnight-ntwrk/compact-runtime` | 0.21.0 | required by the generated code |
+| `@midnight-ntwrk/midnight-js-*` | 5.0.1 | as in the official midnight-examples |
+| `@midnight-ntwrk/dapp-connector-api` | 4.1.0 | |
+| `@midnight-ntwrk/wallet-sdk` | 2.0.1 | e2e only |
 
-These were the versions the [support matrix](https://docs.midnight.network/relnotes/support-matrix) listed for
-Preview, Preprod and Mainnet when the contract was built (2 Nov 2026). The networks have since moved to ledger 9
-(matrix of 13 Nov 2026: node 2.1.101, Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.0, proof server
-9.0.0, indexer 4.4.101); see below.
+These follow the [support matrix](https://docs.midnight.network/relnotes/support-matrix) for ledger 9 (13 Nov 2026:
+node 2.1.101, Compact 0.36.0, compact-runtime 0.21.0, Midnight.js 5.0.x, indexer 4.4.101). The first build (2 Nov
+2026) used the ledger 8 set: compiler 0.31.1, compact-runtime 0.16.0, midnight-js 4.1.1, node 1.0.400.
 
 ---
 

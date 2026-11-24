@@ -145,7 +145,7 @@ export function useMilestones() {
   // ---------------------------------------------------------------- deployment
 
   const deploySimulator = useCallback(async () => {
-    const b = new SimulatorBackend(createPrivateState(secrets.bank), builderState, createPrivateState(secrets.auditorSecret));
+    const b = await SimulatorBackend.create(createPrivateState(secrets.bank), builderState, createPrivateState(secrets.auditorSecret));
     setBackend(b);
     await refresh(b);
     addLog({ actor: 'bank', action: 'Deploy contract', ok: true, detail: `Contract ${b.contractAddress.slice(0, 16)}… deployed in the simulator. The bank's key hash is now the lender.` });
@@ -265,7 +265,7 @@ export function useMilestones() {
           setBusy(target === 'lace' ? 'Deploying the contract: proving, then approve in Lace' : 'Deploying the contract');
           const bank = createPrivateState(secrets.bank);
           const others = { builder: createPrivateState(secrets.builder), auditor: createPrivateState(secrets.auditorSecret) };
-          const b = target === 'lace' ? await LaceBackend.deploy(lace!, bank, others) : new SimulatorBackend(bank, others.builder, others.auditor);
+          const b = target === 'lace' ? await LaceBackend.deploy(lace!, bank, others) : await SimulatorBackend.create(bank, others.builder, others.auditor);
           ctx.backend = b;
           ev.contractAddress = b.contractAddress;
           ev.where = b.where;

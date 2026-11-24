@@ -18,46 +18,46 @@ import {
 import { BANK, BUILDER, EUR, PLAN, STRANGER, inspectStage, setup } from './fixtures.js';
 
 describe('deployment and roles', () => {
-  it('pins only the hash of the deployer secret as lender', () => {
+  it('pins only the hash of the deployer secret as lender', async () => {
     const secret = randomBytes32();
-    const sim = new MilestonesSimulator(BANK, createPrivateState(secret));
+    const sim = await MilestonesSimulator.create(BANK, createPrivateState(secret));
     expect(bytesEqual(sim.ledger.lender, pureCircuits.lenderKey(secret))).toBe(true);
     expect(bytesEqual(sim.ledger.lender, secret)).toBe(false);
   });
 
-  it('separates the lender and builder identities derived from one secret', () => {
+  it('separates the lender and builder identities derived from one secret', async () => {
     const secret = randomBytes32();
     expect(bytesEqual(pureCircuits.lenderKey(secret), pureCircuits.builderKey(secret))).toBe(false);
   });
 
-  it('lets the lender register and revoke inspectors', () => {
-    const { sim } = setup();
+  it('lets the lender register and revoke inspectors', async () => {
+    const { sim } = await setup();
     const extra = generateInspectorKeyPair();
-    sim.registerInspector(BANK, 9n, extra.pk);
+    await sim.registerInspector(BANK, 9n, extra.pk);
     expect(sim.ledger.inspectors.member(9n)).toBe(true);
     expect(sim.ledger.inspectors.lookup(9n).x).toBe(extra.pk.x);
-    sim.revokeInspector(BANK, 9n);
+    await sim.revokeInspector(BANK, 9n);
     expect(sim.ledger.inspectors.member(9n)).toBe(false);
   });
 
-  it('rejects inspector management by anyone but the lender', () => {
-    const { sim } = setup();
+  it('rejects inspector management by anyone but the lender', async () => {
+    const { sim } = await setup();
     const rogue = generateInspectorKeyPair();
-    expect(() => sim.registerInspector(STRANGER, 99n, rogue.pk)).toThrow('Only the lender can do this');
-    expect(() => sim.registerInspector(BUILDER, 99n, rogue.pk)).toThrow('Only the lender can do this');
-    expect(() => sim.revokeInspector(STRANGER, 7n)).toThrow('Only the lender can do this');
+    await expect(sim.registerInspector(STRANGER, 99n, rogue.pk)).rejects.toThrow('Only the lender can do this');
+    await expect(sim.registerInspector(BUILDER, 99n, rogue.pk)).rejects.toThrow('Only the lender can do this');
+    await expect(sim.revokeInspector(STRANGER, 7n)).rejects.toThrow('Only the lender can do this');
     expect(sim.ledger.inspectors.member(99n)).toBe(false);
   });
 
-  it('rejects revoking an unknown inspector', () => {
-    const { sim } = setup();
-    expect(() => sim.revokeInspector(BANK, 404n)).toThrow('Inspector not found');
+  it('rejects revoking an unknown inspector', async () => {
+    const { sim } = await setup();
+    await expect(sim.revokeInspector(BANK, 404n)).rejects.toThrow('Inspector not found');
   });
 });
 
 describe('project registration and acceptance', () => {
-  it('publishes the terms only as a commitment', () => {
-    const { sim, projectId, project, builderSecret } = setup({ accept: false });
+  it('publishes the terms only as a commitment', async () => {
+    const { sim, projectId, project, builderSecret } = await setup({ accept: false });
     const p = sim.ledger.projects.lookup(projectId);
     expect(bytesEqual(p.termsCommitment, project.termsCommitment)).toBe(true);
     expect(bytesEqual(p.builder, pureCircuits.builderKey(builderSecret))).toBe(true);
@@ -66,70 +66,70 @@ describe('project registration and acceptance', () => {
     expect(p.stagesAttested).toBe(0n);
   });
 
-  it('rejects registration by a non-lender, duplicates and invalid plans', () => {
-    const { sim, projectId, project } = setup({ accept: false });
+  it('rejects registration by a non-lender, duplicates and invalid plans', async () => {
+    const { sim, projectId, project } = await setup({ accept: false });
     const builderKey = sim.ledger.projects.lookup(projectId).builder;
-    expect(() => sim.registerProject(STRANGER, randomBytes32(), builderKey, project.termsCommitment, 3n)).toThrow(
+    await expect(sim.registerProject(STRANGER, randomBytes32(), builderKey, project.termsCommitment, 3n)).rejects.toThrow(
       'Only the lender can do this',
     );
-    expect(() => sim.registerProject(BANK, projectId, builderKey, project.termsCommitment, 3n)).toThrow(
+    await expect(sim.registerProject(BANK, projectId, builderKey, project.termsCommitment, 3n)).rejects.toThrow(
       'Project already registered',
     );
-    expect(() => sim.registerProject(BANK, randomBytes32(), builderKey, project.termsCommitment, 0n)).toThrow(
+    await expect(sim.registerProject(BANK, randomBytes32(), builderKey, project.termsCommitment, 0n)).rejects.toThrow(
       'A plan has between 1 and 6 stages',
     );
-    expect(() => sim.registerProject(BANK, randomBytes32(), builderKey, project.termsCommitment, 7n)).toThrow(
+    await expect(sim.registerProject(BANK, randomBytes32(), builderKey, project.termsCommitment, 7n)).rejects.toThrow(
       'A plan has between 1 and 6 stages',
     );
   });
 
-  it('lets only the named builder accept, once, with the approved terms', () => {
-    const { sim, projectId } = setup({ accept: false });
-    expect(() => sim.acceptProject(STRANGER, projectId)).toThrow('Only the builder of this project can do this');
-    expect(() => sim.acceptProject(BANK, projectId)).toThrow('Only the builder of this project can do this');
-    sim.acceptProject(BUILDER, projectId);
+  it('lets only the named builder accept, once, with the approved terms', async () => {
+    const { sim, projectId } = await setup({ accept: false });
+    await expect(sim.acceptProject(STRANGER, projectId)).rejects.toThrow('Only the builder of this project can do this');
+    await expect(sim.acceptProject(BANK, projectId)).rejects.toThrow('Only the builder of this project can do this');
+    await sim.acceptProject(BUILDER, projectId);
     expect(sim.ledger.projects.lookup(projectId).accepted).toBe(true);
-    expect(() => sim.acceptProject(BUILDER, projectId)).toThrow('Project already accepted');
+    await expect(sim.acceptProject(BUILDER, projectId)).rejects.toThrow('Project already accepted');
   });
 
-  it('rejects acceptance when the builder holds different terms than the bank committed to', () => {
+  it('rejects acceptance when the builder holds different terms than the bank committed to', async () => {
     const builderSecret = randomBytes32();
-    const sim = new MilestonesSimulator(BANK, createPrivateState());
+    const sim = await MilestonesSimulator.create(BANK, createPrivateState());
     const approved = planProject(createPrivateState(builderSecret), PLAN);
     // The builder's local copy claims a higher limit than the bank approved.
     const inflated = planProject(createPrivateState(builderSecret), { ...PLAN, limit: EUR(900_000) }, approved.projectId);
     sim.addParty(BUILDER, inflated.state);
-    sim.registerProject(BANK, approved.projectId, pureCircuits.builderKey(builderSecret), approved.termsCommitment, 3n);
-    expect(() => sim.acceptProject(BUILDER, approved.projectId)).toThrow(
+    await sim.registerProject(BANK, approved.projectId, pureCircuits.builderKey(builderSecret), approved.termsCommitment, 3n);
+    await expect(sim.acceptProject(BUILDER, approved.projectId)).rejects.toThrow(
       'Loan terms do not match the approved commitment',
     );
   });
 
-  it('rejects calls on an unknown project', () => {
-    const { sim } = setup();
-    expect(() => sim.attestMilestone(BUILDER, randomBytes32(), 0n)).toThrow('Unknown project');
+  it('rejects calls on an unknown project', async () => {
+    const { sim } = await setup();
+    await expect(sim.attestMilestone(BUILDER, randomBytes32(), 0n)).rejects.toThrow('Unknown project');
   });
 });
 
 describe('full draw schedule', () => {
   it('runs attest -> request -> release for every stage and ends within the limit', async () => {
-    const s = setup();
+    const s = await setup();
     const { sim, projectId } = s;
     const amounts = [EUR(110_000), EUR(95_000), EUR(80_000)];
 
     for (const [i, amount] of amounts.entries()) {
       const stage = BigInt(i);
       await inspectStage(s, stage, amount);
-      sim.attestMilestone(BUILDER, projectId, stage);
+      await sim.attestMilestone(BUILDER, projectId, stage);
       expect(sim.ledger.stages.lookup(projectId).lookup(stage).status).toBe(StageStatus.Attested);
 
       const before = sim.ledger.projects.lookup(projectId).drawnCommitment;
-      sim.requestTranche(BUILDER, projectId, stage);
+      await sim.requestTranche(BUILDER, projectId, stage);
       const after = sim.ledger.projects.lookup(projectId).drawnCommitment;
       expect(bytesEqual(before, after)).toBe(false);
       expect(sim.ledger.stages.lookup(projectId).lookup(stage).status).toBe(StageStatus.TrancheRequested);
 
-      sim.releaseTranche(BANK, projectId, stage);
+      await sim.releaseTranche(BANK, projectId, stage);
       expect(sim.ledger.stages.lookup(projectId).lookup(stage).status).toBe(StageStatus.TrancheReleased);
     }
 
@@ -146,10 +146,10 @@ describe('full draw schedule', () => {
   });
 
   it('lets the bank check a tranche amount sent off chain against the ledger', async () => {
-    const s = setup();
+    const s = await setup();
     await inspectStage(s, 0n, EUR(100_000));
-    s.sim.attestMilestone(BUILDER, s.projectId, 0n);
-    s.sim.requestTranche(BUILDER, s.projectId, 0n);
+    await s.sim.attestMilestone(BUILDER, s.projectId, 0n);
+    await s.sim.requestTranche(BUILDER, s.projectId, 0n);
     const local = Object.values(s.sim.privateState(BUILDER).projects)[0].stages['0'];
     const onChain = s.sim.ledger.stages.lookup(s.projectId).lookup(0n).trancheCommitment;
     expect(bytesEqual(pureCircuits.amountCommitment(EUR(100_000), local.trancheSalt!), onChain)).toBe(true);
@@ -157,14 +157,14 @@ describe('full draw schedule', () => {
   });
 
   it('rejects release by anyone but the lender and release without a request', async () => {
-    const s = setup();
+    const s = await setup();
     await inspectStage(s, 0n, EUR(50_000));
-    s.sim.attestMilestone(BUILDER, s.projectId, 0n);
-    expect(() => s.sim.releaseTranche(BANK, s.projectId, 0n)).toThrow('No open tranche request for this stage');
-    s.sim.requestTranche(BUILDER, s.projectId, 0n);
-    expect(() => s.sim.releaseTranche(BUILDER, s.projectId, 0n)).toThrow('Only the lender can do this');
-    expect(() => s.sim.releaseTranche(BANK, s.projectId, 1n)).toThrow('Stage not attested');
-    s.sim.releaseTranche(BANK, s.projectId, 0n);
-    expect(() => s.sim.releaseTranche(BANK, s.projectId, 0n)).toThrow('No open tranche request for this stage');
+    await s.sim.attestMilestone(BUILDER, s.projectId, 0n);
+    await expect(s.sim.releaseTranche(BANK, s.projectId, 0n)).rejects.toThrow('No open tranche request for this stage');
+    await s.sim.requestTranche(BUILDER, s.projectId, 0n);
+    await expect(s.sim.releaseTranche(BUILDER, s.projectId, 0n)).rejects.toThrow('Only the lender can do this');
+    await expect(s.sim.releaseTranche(BANK, s.projectId, 1n)).rejects.toThrow('Stage not attested');
+    await s.sim.releaseTranche(BANK, s.projectId, 0n);
+    await expect(s.sim.releaseTranche(BANK, s.projectId, 0n)).rejects.toThrow('No open tranche request for this stage');
   });
 });

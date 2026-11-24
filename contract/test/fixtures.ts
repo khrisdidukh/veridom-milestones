@@ -46,19 +46,19 @@ export const evidenceFor = (label: string) =>
   ]);
 
 /** Deploys, registers an inspector and a project, and has the builder accept it. */
-export const setup = (opts: { accept?: boolean; plan?: ProjectPlan } = {}): Scenario => {
+export const setup = async (opts: { accept?: boolean; plan?: ProjectPlan } = {}): Promise<Scenario> => {
   const bankSecret = randomBytes32();
   const builderSecret = randomBytes32();
-  const sim = new MilestonesSimulator(BANK, createPrivateState(bankSecret));
+  const sim = await MilestonesSimulator.create(BANK, createPrivateState(bankSecret));
   sim.addParty(STRANGER, createPrivateState());
 
   const inspector = generateInspectorKeyPair();
   const inspectorId = 7n;
-  sim.registerInspector(BANK, inspectorId, inspector.pk);
+  await sim.registerInspector(BANK, inspectorId, inspector.pk);
 
   const project = planProject(createPrivateState(builderSecret), opts.plan ?? PLAN);
   sim.addParty(BUILDER, project.state);
-  sim.registerProject(BANK, project.projectId, pureCircuits.builderKey(builderSecret), project.termsCommitment, project.stageCount);
+  await sim.registerProject(BANK, project.projectId, pureCircuits.builderKey(builderSecret), project.termsCommitment, project.stageCount);
   if (opts.accept !== false) sim.acceptProject(BUILDER, project.projectId);
 
   return { sim, bankSecret, builderSecret, inspector, inspectorId, project, projectId: project.projectId };

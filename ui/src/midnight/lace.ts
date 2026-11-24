@@ -12,17 +12,25 @@
 
 import type { ConnectedAPI, Configuration, InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 import { encodeContractAddress } from '@midnight-ntwrk/compact-runtime';
-import * as ledgerApi from '@midnight-ntwrk/midnight-js-protocol/ledger';
-import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
-import { createProofProvider } from '@midnight-ntwrk/midnight-js-types';
-import type { MidnightProvider, PrivateStateProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
+import * as ledgerApi from '@midnight-ntwrk/midnight-js-protocol/v9';
+import { ContractState } from '@midnight-ntwrk/midnight-js-protocol/v9/compact-runtime';
+import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/v9/compact-js';
+import {
+  createLedger9MidnightProvider,
+  createLedger9ProofProvider,
+  createLedger9WalletProvider,
+  type ContractPrivateStates,
+  type ContractStateRead,
+  type LedgerTransaction,
+  type PrivateStateProvider,
+} from '@midnight-ntwrk/midnight-js-types';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { deployContract, findDeployedContract, submitCallTx } from '@midnight-ntwrk/midnight-js-contracts';
 import {
   Contract,
+  dumpStateValue,
   fromHex,
   ledger as readLedgerState,
   toHex,
@@ -33,37 +41,67 @@ import {
 } from '@veridom/milestones-contract';
 import type { CallOutcome, MilestonesBackend, Party } from '../backend/types';
 
+/** How long a built transaction stays valid (Midnight.js 5 `config.ttlSeconds`). */
+const TX_TTL_SECONDS = 3600;
+
+/**
+ * Midnight.js 5 serves the serialized contract state tagged with the ledger era
+ * that wrote it. This contract is deployed on ledger 9 only.
+ */
+function contractStateData(read: ContractStateRead) {
+  if (read.contractState.era !== 'v9') throw new Error('Expected a ledger 9 contract state');
+  return read.contractState.deserialize({ v9: ContractState }).data;
+}
+
 export const DEFAULT_NETWORK_ID = import.meta.env.VITE_NETWORK_ID || 'preprod';
 
 type VeridomContract = Contract<VeridomPrivateState>;
 
-/** Private states live in memory, scoped by contract address and party. */
+/**
+ * Private states live in memory for the lifetime of the page, scoped by contract
+ * address and party (Midnight.js 5 `forContract` shape). Signing keys likewise.
+ */
 function memoryPrivateStateProvider(): PrivateStateProvider<string, VeridomPrivateState> {
-  const states = new Map<string, VeridomPrivateState>();
+  const states = new Map<string, Map<string, VeridomPrivateState>>();
   const signingKeys = new Map<string, unknown>();
-  let address = '';
-  const key = (id: string) => `${address}:${id}`;
+  const unsupported = (what: string) => async (): Promise<never> => {
+    throw new Error(`${what} is not supported by the in-memory provider`);
+  };
+  const forContract = (address: string): ContractPrivateStates<string, VeridomPrivateState> => {
+    const contractAddress = address.toLowerCase();
+    const scoped = () => {
+      let m = states.get(contractAddress);
+      if (!m) states.set(contractAddress, (m = new Map()));
+      return m;
+    };
+    return {
+      contractAddress,
+      async set(id: string, state: VeridomPrivateState) {
+        scoped().set(id, state);
+      },
+      async get(id: string) {
+        return states.get(contractAddress)?.get(id) ?? null;
+      },
+      async remove(id: string) {
+        states.get(contractAddress)?.delete(id);
+      },
+      async clear() {
+        states.delete(contractAddress);
+      },
+      exportPrivateStates: unsupported('Export'),
+      importPrivateStates: unsupported('Import'),
+    } as ContractPrivateStates<string, VeridomPrivateState>;
+  };
   return {
-    setContractAddress(a: string) {
-      address = a;
-    },
-    async get(id: string) {
-      return states.get(key(id)) ?? null;
-    },
-    async set(id: string, value: VeridomPrivateState) {
-      states.set(key(id), value);
-    },
-    async remove(id: string) {
-      states.delete(key(id));
-    },
-    async clear() {
+    forContract,
+    async clearAll() {
       states.clear();
     },
     async setSigningKey(a: string, k: unknown) {
       signingKeys.set(a, k);
     },
     async getSigningKey(a: string) {
-      return signingKeys.get(a) ?? null;
+      return (signingKeys.get(a) ?? null) as never;
     },
     async removeSigningKey(a: string) {
       signingKeys.delete(a);
@@ -71,12 +109,8 @@ function memoryPrivateStateProvider(): PrivateStateProvider<string, VeridomPriva
     async clearSigningKeys() {
       signingKeys.clear();
     },
-    async exportPrivateStates() {
-      throw new Error('Export is not supported by the in-memory provider');
-    },
-    async importPrivateStates() {
-      throw new Error('Import is not supported by the in-memory provider');
-    },
+    exportSigningKeys: unsupported('Export'),
+    importSigningKeys: unsupported('Import'),
   } as unknown as PrivateStateProvider<string, VeridomPrivateState>;
 }
 
@@ -116,19 +150,18 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
   }
   const config = await wallet.getConfiguration();
   const status = await wallet.getConnectionStatus();
-  if (status.status === 'connected') setNetworkId(status.networkId);
-  else setNetworkId(networkId);
+  const connectedNetwork = status.status === 'connected' ? status.networkId : config.networkId || networkId;
 
   const addresses = await wallet.getShieldedAddresses();
-  const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(assetBase(), fetch.bind(window));
+  const zkConfigProvider = new FetchZkConfigProvider<ProvableCircuitId>(assetBase(), { fetchFunc: fetch.bind(window) });
   // Proofs are made the way the user chose in Lace (Settings > Midnight > Proof generator):
   // in the wallet itself (WASM) or by the proof server configured there.
   // If the wallet offers no prover but names a proof server, talk to that server directly.
-  let proofProvider: ReturnType<typeof createProofProvider>;
+  let proofProvider: ReturnType<typeof createLedger9ProofProvider>;
   let proving: string;
   try {
     const provingProvider = await wallet.getProvingProvider(zkConfigProvider.asKeyMaterialProvider());
-    proofProvider = createProofProvider(provingProvider as unknown as Parameters<typeof createProofProvider>[0]);
+    proofProvider = createLedger9ProofProvider(provingProvider as unknown as Parameters<typeof createLedger9ProofProvider>[0]);
     proving = config.proverServerUri ? `through Lace, proof server ${config.proverServerUri}` : 'in Lace';
   } catch (e) {
     if (!config.proverServerUri) throw new Error(`Lace offered no way to make proofs: ${e instanceof Error ? e.message : String(e)}`);
@@ -147,10 +180,12 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
     WebSocket as unknown as Parameters<typeof indexerPublicDataProvider>[2],
   );
 
-  const walletProvider: WalletProvider = {
+  // Midnight.js 5 providers are era-tagged; these helpers lift ledger 9-only
+  // implementations into them (official midnight-examples zk-loan pattern).
+  const walletProvider = createLedger9WalletProvider({
     getCoinPublicKey: () => addresses.shieldedCoinPublicKey as ledgerApi.CoinPublicKey,
     getEncryptionPublicKey: () => addresses.shieldedEncryptionPublicKey as ledgerApi.EncPublicKey,
-    async balanceTx(tx: ledgerApi.Transaction<ledgerApi.SignatureEnabled, ledgerApi.Proof, ledgerApi.PreBinding>) {
+    async balanceTx(tx: LedgerTransaction<'Unbound', 'v9'>): Promise<ledgerApi.FinalizedTransaction> {
       onStatus?.('Approve the transaction in Lace');
       try {
         // Lace appends {sender} as a third argument; pass an options object second.
@@ -161,29 +196,36 @@ export async function connectLace(networkId: string = DEFAULT_NETWORK_ID, onStat
         onStatus?.(undefined);
       }
     },
-  };
-  const midnightProvider: MidnightProvider = {
-    async submitTx(tx: ledgerApi.FinalizedTransaction) {
-      onStatus?.('Submitting transaction');
-      try {
-        await wallet.submitTransaction(toHex(tx.serialize()));
-        return tx.identifiers()[0];
-      } finally {
-        onStatus?.(undefined);
-      }
-    },
-  };
+  });
+  const midnightProvider = createLedger9MidnightProvider(async (handle: LedgerTransaction<'Finalized', 'v9'>) => {
+    onStatus?.('Submitting transaction');
+    try {
+      const bytes = handle.serialize();
+      await wallet.submitTransaction(toHex(bytes));
+      return ledgerApi.Transaction.deserialize('signature', 'proof', 'binding', bytes).identifiers()[0];
+    } finally {
+      onStatus?.(undefined);
+    }
+  });
 
   const privateStates = memoryPrivateStateProvider();
   return {
     wallet,
     config,
-    networkId,
+    networkId: connectedNetwork,
     shieldedAddress: addresses.shieldedAddress,
     proving,
     dust,
     privateStates,
-    providers: { privateStateProvider: privateStates, zkConfigProvider, proofProvider, publicDataProvider, walletProvider, midnightProvider },
+    providers: {
+      privateStateProvider: privateStates,
+      zkConfigProvider,
+      proofProvider,
+      publicDataProvider,
+      walletProvider,
+      midnightProvider,
+      config: { networkId: connectedNetwork, ttlSeconds: TX_TTL_SECONDS },
+    },
   };
 }
 
@@ -222,7 +264,6 @@ export class LaceBackend implements MilestonesBackend {
     const address = deployed.deployTxData.public.contractAddress;
     const backend = new LaceBackend(session, address);
     backend.deployTx = { txId: String(deployed.deployTxData.public.txId), blockHeight: Number(deployed.deployTxData.public.blockHeight) };
-    session.privateStates.setContractAddress(address);
     for (const [party, state] of Object.entries(others)) await backend.setPrivateState(party as Party, state!);
     return backend;
   }
@@ -236,30 +277,33 @@ export class LaceBackend implements MilestonesBackend {
       initialPrivateState: states.bank,
     });
     const backend = new LaceBackend(session, address);
-    session.privateStates.setContractAddress(address);
     for (const [party, state] of Object.entries(states)) await backend.setPrivateState(party as Party, state);
     return backend;
   }
 
+  private async stateData() {
+    const read: ContractStateRead | null = await this.session.providers.publicDataProvider.queryContractState(this.contractAddress);
+    if (!read) throw new Error('The indexer has no state for this contract yet');
+    return contractStateData(read);
+  }
+
   async readLedger(): Promise<Ledger> {
-    const state = await this.session.providers.publicDataProvider.queryContractState(this.contractAddress);
-    if (!state) throw new Error('The indexer has no state for this contract yet');
-    return readLedgerState(state.data);
+    return readLedgerState(await this.stateData());
   }
 
   async publicStateDump(): Promise<string | undefined> {
-    const state = await this.session.providers.publicDataProvider.queryContractState(this.contractAddress);
-    return state?.data?.toString?.(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return dumpStateValue((await this.stateData() as any).state);
   }
 
   async getPrivateState(party: Party): Promise<VeridomPrivateState> {
-    const s = await this.session.privateStates.get(party);
+    const s = await this.session.privateStates.forContract(this.contractAddress).get(party);
     if (!s) throw new Error(`No private state for ${party}`);
     return s;
   }
 
   async setPrivateState(party: Party, state: VeridomPrivateState): Promise<void> {
-    await this.session.privateStates.set(party, state);
+    await this.session.privateStates.forContract(this.contractAddress).set(party, state);
   }
 
   async call(party: Party, circuit: ProvableCircuitId, args: unknown[]): Promise<CallOutcome> {
