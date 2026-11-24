@@ -206,7 +206,8 @@ label {
 
 .titleblock {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  /* The name keeps room for itself; the run controls take at most 40rem and wrap inside it. */
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, 40rem);
   gap: 16px 32px;
   align-items: center;
   padding-top: 20px;
